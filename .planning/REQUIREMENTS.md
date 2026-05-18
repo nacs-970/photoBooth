@@ -93,38 +93,43 @@
 
 ## Traceability
 
-*Populated during roadmap creation.*
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CAM-01 | — | Pending |
-| CAM-02 | — | Pending |
-| CAM-03 | — | Pending |
-| CAM-04 | — | Pending |
-| SESS-01 | — | Pending |
-| SESS-02 | — | Pending |
-| SESS-03 | — | Pending |
-| SESS-04 | — | Pending |
-| TMPL-01 | — | Pending |
-| TMPL-02 | — | Pending |
-| TMPL-03 | — | Pending |
-| TMPL-04 | — | Pending |
-| EDIT-01 | — | Pending |
-| EDIT-02 | — | Pending |
-| EDIT-03 | — | Pending |
-| EDIT-04 | — | Pending |
-| OUT-01 | — | Pending |
-| OUT-02 | — | Pending |
-| OUT-03 | — | Pending |
-| OUT-04 | — | Pending |
-| OUT-05 | — | Pending |
-| OUT-06 | — | Pending |
+| CAM-01 | Phase 1 | Pending |
+| CAM-02 | Phase 1 | Pending |
+| CAM-03 | Phase 2 | Pending |
+| CAM-04 | Phase 1 | Pending |
+| SESS-01 | Phase 1 | Pending |
+| SESS-02 | Phase 1 | Pending |
+| SESS-03 | Phase 1 | Pending |
+| SESS-04 | Phase 1 | Pending |
+| TMPL-01 | Phase 3 | Pending |
+| TMPL-02 | Phase 3 | Pending |
+| TMPL-03 | Phase 3 | Pending |
+| TMPL-04 | Phase 3 | Pending |
+| EDIT-01 | Phase 4 | Pending |
+| EDIT-02 | Phase 4 | Pending |
+| EDIT-03 | Phase 4 | Pending |
+| EDIT-04 | Phase 4 | Pending |
+| OUT-01 | Phase 5 | Pending |
+| OUT-02 | Phase 5 | Pending |
+| OUT-03 | Phase 5 | Pending |
+| OUT-04 | Phase 5 | Pending |
+| OUT-05 | Phase 5 | Pending |
+| OUT-06 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 22 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 22 ⚠️
+- Mapped to phases: 22
+- Unmapped: 0
+
+**Per-phase counts:**
+- Phase 1 (Foundation & Webcam Session Loop): 7 requirements
+- Phase 2 (Tethered DSLR Capture): 1 requirement
+- Phase 3 (Template Library & Picker): 4 requirements
+- Phase 4 (Canvas Strip Editor): 4 requirements
+- Phase 5 (GIF, Share & Offline Fallback): 6 requirements
 
 ---
 *Requirements defined: 2026-05-19*
-*Last updated: 2026-05-19 after initial definition*
+*Last updated: 2026-05-19 after roadmap creation (traceability populated)*

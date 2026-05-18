@@ -1,0 +1,72 @@
+# Project State
+
+## Project Reference
+
+See: .planning/PROJECT.md (updated 2026-05-19)
+
+**Core value:** Guests walk away with a custom photo strip they can instantly share via QR code, captured with a real camera.
+**Current focus:** Phase 1 — Foundation & Webcam Session Loop
+
+## Current Position
+
+Phase: 1 of 5 (Foundation & Webcam Session Loop)
+Plan: 0 of TBD in current phase
+Status: Ready to plan
+Last activity: 2026-05-19 — Roadmap created, all 22 v1 requirements mapped across 5 MVP phases
+
+Progress: [░░░░░░░░░░] 0%
+
+## Performance Metrics
+
+**Velocity:**
+- Total plans completed: 0
+- Average duration: —
+- Total execution time: —
+
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| - | - | - | - |
+
+**Recent Trend:**
+- Last 5 plans: —
+- Trend: —
+
+*Updated after each plan completion*
+
+## Accumulated Context
+
+### Decisions
+
+Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
+
+- Roadmap: Phases derived as vertical MVP slices, validating the camera adapter interface on getUserMedia (Phase 1) before gphoto2 (Phase 2) — the highest-risk integration sits in its own phase
+- Roadmap: Templates (Phase 3) split from the canvas editor (Phase 4) per research guidance; Phase 3 ends at "confirmed template chosen for session"
+
+### Pending Todos
+
+None yet.
+
+### Blockers/Concerns
+
+Empirical gaps flagged by research to validate during execution:
+- gphoto2 MJPEG live-view on the target camera body (Phase 2 day 1 spike)
+- 0x0.st upload field name, CORS behavior, rate-limits (Phase 5 day 1)
+- gifenc quality on real event-photo content (Phase 5)
+- gphoto2 USB device claim conflict (`-53` from gvfs/PTPCamera) at startup (Phase 2)
+
+## Deferred Items
+
+Items acknowledged and carried forward from previous milestone close:
+
+| Category | Item | Status | Deferred At |
+|----------|------|--------|-------------|
+| *(none)* | | | |
+
+## Session Continuity
+
+Last session: 2026-05-19
+Stopped at: Roadmap and traceability written; ready to plan Phase 1
+Resume file: None
