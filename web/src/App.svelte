@@ -6,6 +6,8 @@
   import type { CameraInfo } from '$lib/types.ts';
   import IdleScreen from './screens/IdleScreen.svelte';
   import CountdownScreen from './screens/CountdownScreen.svelte';
+  import ReviewScreen from './screens/ReviewScreen.svelte';
+  import PhotoGridScreen from './screens/PhotoGridScreen.svelte';
 
   onMount(async () => {
     try {
@@ -27,9 +29,9 @@
     {:else if session.screen === 'countdown_preview'}
       <CountdownScreen />
     {:else if session.screen === 'review'}
-      <div class="placeholder">Shot {session.currentShotIndex + 1} captured — Plan 03 wires Review</div>
+      <ReviewScreen />
     {:else if session.screen === 'photo_grid'}
-      <div class="placeholder">Photo grid — Plan 03 wires this up</div>
+      <PhotoGridScreen />
     {/if}
   </div>
 {/key}
@@ -40,16 +42,5 @@
     height: 100vh;
     position: absolute;
     inset: 0;
-  }
-
-  .placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100vw;
-    height: 100vh;
-    background: var(--color-dominant);
-    color: var(--color-text-muted);
-    font-size: var(--size-body);
   }
 </style>
