@@ -2,17 +2,30 @@
   import { onMount } from 'svelte';
   import LivePreview from '../components/LivePreview.svelte';
   import PrimaryButton from '../components/PrimaryButton.svelte';
-  import { startSession } from '$lib/session.svelte.ts';
+  import { startSession, showDisconnect } from '$lib/session.svelte.ts';
   import { cameraAdapter } from '$lib/camera/adapter.ts';
   import { unlockAudio } from '$lib/audio.ts';
 
   onMount(async () => {
     try {
       await cameraAdapter.init();
-    } catch (err) {
-      console.error('[IdleScreen] Camera init failed:', err);
-      // Plan 04 wires the full permission-denied / disconnect handling.
-      // For Plan 01, log the error and let the user see a dark preview.
+      // Wire disconnect callback BEFORE attachPreview so we never miss a disconnect
+      // that fires between init() and the first video frame (CAM-04).
+      cameraAdapter.onDisconnect(showDisconnect);
+    } catch (err: unknown) {
+      const domErr = err as DOMException;
+      if (domErr?.name === 'NotAllowedError') {
+        // Permission-denied path: console-only in Phase 1.
+        // A dedicated permission-denied screen is acknowledged as deferred polish.
+        // The app surfaces the generic DisconnectModal as a user-visible fallback
+        // if the user taps Retry after revoking permission (T-04-Crash mitigation).
+        console.warn('[IdleScreen] Camera permission denied:', err);
+      } else {
+        // Any other init failure (e.g. hardware error, device busy):
+        // surface the disconnect modal so the user sees a bounded error, not a blank screen.
+        console.error('[IdleScreen] Camera init failed:', err);
+        showDisconnect();
+      }
     }
   });
 
