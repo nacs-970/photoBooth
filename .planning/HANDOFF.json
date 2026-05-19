@@ -1,0 +1,29 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-05-19T21:08:29+07:00",
+  "phase": "1",
+  "phase_name": "Foundation & Webcam Session Loop",
+  "phase_dir": ".planning/phases/01-foundation-webcam-session-loop",
+  "plan": 0,
+  "task": 0,
+  "total_tasks": 11,
+  "status": "paused",
+  "completed_tasks": [],
+  "remaining_tasks": [
+    {"id": 1, "name": "01-01 Wave 1: Repo scaffold + CameraAdapter + IdleScreen", "status": "not_started"},
+    {"id": 2, "name": "01-02 Wave 2: Countdown ring + flash + shutter sound + single capture", "status": "not_started"},
+    {"id": 3, "name": "01-03 Wave 3: Multi-shot + retake + photo grid + reset", "status": "not_started"},
+    {"id": 4, "name": "01-04 Wave 4: Disconnect modal + retry", "status": "not_started"}
+  ],
+  "blockers": [],
+  "human_actions_pending": [],
+  "decisions": [
+    {"decision": "MVP vertical slice mode — 4 sequential plans, each a working end-to-end slice", "rationale": "Walking skeleton pattern for Phase 1 of new project", "phase": "1"},
+    {"decision": "CameraAdapter uses attachPreview(el) not getStream() — Phase 2 compat", "rationale": "TetheredAdapter uses MJPEG via img.src, no MediaStream", "phase": "1"},
+    {"decision": "Two independent package.json (web/ + server/) with root concurrently", "rationale": "Avoids npm workspace hoisting confusion", "phase": "1"},
+    {"decision": "Vite proxy /api → localhost:3001 in web/vite.config.ts", "rationale": "Standard SPA + separate backend dev pattern", "phase": "1"}
+  ],
+  "uncommitted_files": [],
+  "next_action": "Run /gsd:execute-phase 1 in a fresh context (/clear first)",
+  "context_notes": "Planning session complete. Research, VALIDATION.md, 4 PLAN.md files, SKELETON.md all written and committed. Plan checker found 0 blockers, 3 warnings (all fixed). Ready to execute."
+}
