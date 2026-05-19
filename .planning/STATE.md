@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: phase complete — awaiting verification
+status: phase complete — awaiting manual smoke test
 stopped_at: Phase 1 all plans done — 4/4 waves complete
 last_updated: "2026-05-20T00:00:00.000Z"
 last_activity: 2026-05-20 — Phase 1 execution complete: DisconnectModal + retry UI (42/42 tests pass)
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
   completed_plans: 4
   percent: 100
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 ## Current Position
 
 Phase: 1 of 5 (Foundation & Webcam Session Loop)
-Plan: 0 of 4 in current phase
-Status: Planned — ready to execute
-Last activity: 2026-05-19 — Phase 1 planned (4 plans: walking skeleton, countdown+capture, multi-shot+retake, disconnect modal)
+Plan: 4 of 4 in current phase
+Status: Executed — awaiting manual smoke test (run `npm run dev`, see VERIFICATION.md)
+Last activity: 2026-05-20 — Phase 1 all 4 plans executed (42/42 tests pass, 5/5 ROADMAP SC verified)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████████] 100% (Phase 1 of 5)
 
 ## Performance Metrics
 
