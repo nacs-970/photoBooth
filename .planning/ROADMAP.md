@@ -33,10 +33,24 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. If the webcam is unplugged or revoked mid-session, the app shows a "Camera disconnected — check cable" screen with a working retry button instead of crashing
 **Plans**: 4 plans
 Plans:
+
+**Wave 1**
 - [ ] 01-01-PLAN.md — Walking Skeleton: scaffold, CameraAdapter interface, idle screen with live webcam preview, capability probe
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 01-02-PLAN.md — Single countdown to capture: countdown ring, flash, shutter sound, one Blob saved
+
+**Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 01-03-PLAN.md — Multi-shot session with per-shot retake, photo grid stub, reset to idle
+
+**Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 01-04-PLAN.md — Camera disconnect modal with retry (CAM-04)
+
+Cross-cutting constraints:
+- `CameraAdapter` interface (defined in 01-01) is the contract all subsequent plans call — no plan may redefine it
+- `session.svelte.ts` object export pattern (D-01) required by all plans — never export primitives
+- All plans must `URL.revokeObjectURL()` on shot overwrite or session reset — object URL leak prevention
+- Screen code must never branch on platform (CLAUDE.md) — all platform logic stays in Camera Adapters
 **UI hint**: yes
 
 ### Phase 2: Tethered DSLR Capture (gphoto2)

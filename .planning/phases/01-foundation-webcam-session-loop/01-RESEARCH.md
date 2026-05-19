@@ -766,22 +766,13 @@ import '@testing-library/jest-dom/vitest';
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Shutter sound asset source**
-   - What we know: SESS-03 requires a shutter sound; D-13 specifies shutter-only (no countdown ticks); UI-SPEC says `.mp3/.ogg`
-   - What's unclear: No asset file exists in the project yet. Where does it come from? Free asset site (freesound.org), embedded base64, or procedurally generated?
-   - Recommendation: Planner should add a task to source and include a `shutter.mp3` in `web/public/sounds/`. freesound.org has public domain camera click sounds. Keep the clip <100KB.
+1. **Shutter sound asset source** — RESOLVED: Plan 01-02 Task 1 adds a task to source `web/public/sounds/shutter.mp3` from freesound.org (public domain) with a PLACEHOLDER fallback if unavailable during execution.
 
-2. **Fastify dev port vs Vite dev port proxy setup**
-   - What we know: Vite dev server runs on 5173; Fastify backend on (e.g.) 3001; `GET /api/camera/info` needs to reach Fastify during dev
-   - What's unclear: Vite's `server.proxy` config vs `concurrently` vs a root-level `vite.config.ts` in the repo root
-   - Recommendation: Add Vite proxy in `web/vite.config.ts`: `server: { proxy: { '/api': 'http://localhost:3001' } }`. This is the standard Vite SPA + separate backend pattern. [CITED: vite.dev/config/server-options#server-proxy]
+2. **Fastify dev port vs Vite dev port proxy setup** — RESOLVED: Plan 01-01 Task 1 configures `web/vite.config.ts` with `server.proxy: { '/api': 'http://localhost:3001' }`. This is the standard Vite SPA + separate backend proxy pattern.
 
-3. **Single-repo vs npm workspaces**
-   - What we know: Project is greenfield; `web/` and `server/` separation recommended
-   - What's unclear: Should this be npm workspaces (shared `node_modules`) or two independent `package.json` files?
-   - Recommendation: Two independent `package.json` files (`web/package.json`, `server/package.json`) with a root `package.json` containing only `scripts` and `concurrently` as a dev dependency. Avoids workspace hoisting confusion. Phase 1 can always add workspaces later if needed.
+3. **Single-repo vs npm workspaces** — RESOLVED: Plan 01-01 Task 1 uses two independent `package.json` files (`web/package.json`, `server/package.json`) with a root `package.json` containing only `scripts` and `concurrently`. Workspaces can be added in a later phase if needed.
 
 ---
 
