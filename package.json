@@ -1,0 +1,10 @@
+{
+  "name": "photobooth",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently --names web,server --kill-others-on-fail \"npm --prefix web run dev\" \"npm --prefix server run dev\""
+  },
+  "devDependencies": {
+    "concurrently": "9.2.1"
+  }
+}
