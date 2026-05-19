@@ -27,8 +27,13 @@ function makeMockAudio(playResult: 'resolve' | 'reject' = 'resolve') {
     volume: 0,
     preload: '',
   };
-  const AudioClass = vi.fn(() => instance);
-  return { AudioClass, instance };
+  // Must use function keyword so it can be called as a constructor (new AudioClass())
+  // Arrow functions cannot be used as constructors.
+  function AudioClass(this: unknown) {
+    return instance;
+  }
+  const AudioClassSpy = vi.fn().mockImplementation(AudioClass);
+  return { AudioClass: AudioClassSpy, instance };
 }
 
 beforeEach(() => {
