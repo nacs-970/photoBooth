@@ -4,6 +4,8 @@ import {
   startSession,
   saveShot,
   nextShot,
+  keepShot,
+  retakeShot,
   resetSession,
   showDisconnect,
   hideDisconnect,
@@ -98,14 +100,49 @@ describe('nextShot()', () => {
     expect(session.screen).toBe('countdown_preview');
   });
 
-  it('transitions to photo_grid when advancing past the last shot', () => {
+  it('transitions to photo_grid on last shot (alias for keepShot — does NOT increment past last)', () => {
     startSession();
     session.currentShotIndex = 3; // index 3 = 4th shot (shotCount=4)
 
     nextShot();
 
-    expect(session.currentShotIndex).toBe(4);
+    // nextShot is an alias for keepShot: last-shot branch does NOT increment index
+    expect(session.currentShotIndex).toBe(3);
     expect(session.screen).toBe('photo_grid');
+  });
+});
+
+describe('keepShot()', () => {
+  it('increments currentShotIndex and sets screen to countdown_preview when not last shot', () => {
+    startSession();
+    expect(session.currentShotIndex).toBe(0);
+
+    keepShot();
+
+    expect(session.currentShotIndex).toBe(1);
+    expect(session.screen).toBe('countdown_preview');
+  });
+
+  it('sets screen to photo_grid on last shot without incrementing currentShotIndex', () => {
+    startSession();
+    session.currentShotIndex = 3; // index 3 = 4th shot (shotCount=4)
+
+    keepShot();
+
+    expect(session.currentShotIndex).toBe(3);
+    expect(session.screen).toBe('photo_grid');
+  });
+});
+
+describe('retakeShot()', () => {
+  it('sets screen to countdown_preview and does NOT mutate currentShotIndex', () => {
+    startSession();
+    session.currentShotIndex = 2;
+
+    retakeShot();
+
+    expect(session.currentShotIndex).toBe(2);
+    expect(session.screen).toBe('countdown_preview');
   });
 });
 

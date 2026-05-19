@@ -12,6 +12,10 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    fs: {
+      // Allow serving files from node_modules resolved via symlink (worktree setup)
+      allow: ['..', '/home/nacs/Documents/git/photoBooth/web/node_modules'],
+    },
     proxy: {
       '/api': 'http://localhost:3001',
     },
