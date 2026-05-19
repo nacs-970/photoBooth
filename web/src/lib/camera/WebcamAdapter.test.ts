@@ -123,6 +123,57 @@ describe('WebcamAdapter.dispose()', () => {
   });
 });
 
+describe('WebcamAdapter disconnect detection — devicechange', () => {
+  it('invokes disconnectCallback when devicechange fires and no videoinput devices remain', async () => {
+    const adapter = new WebcamAdapter();
+    const disconnectCb = vi.fn();
+    adapter.onDisconnect(disconnectCb);
+    await adapter.init();
+
+    // Override enumerateDevices to return NO videoinput devices
+    navigator.mediaDevices.enumerateDevices = vi
+      .fn()
+      .mockResolvedValue([{ kind: 'audioinput' }]);
+
+    // Find and invoke the devicechange handler registered on navigator.mediaDevices
+    const dcCall = mockAddEventListenerDevices.mock.calls.find(
+      (call) => call[0] === 'devicechange',
+    );
+    expect(dcCall).toBeDefined();
+    const dcHandler = dcCall![1] as () => Promise<void>;
+    await dcHandler();
+
+    expect(disconnectCb).toHaveBeenCalledTimes(1);
+  });
+
+  it('does NOT invoke disconnectCallback when devicechange fires but a videoinput device is still present', async () => {
+    const adapter = new WebcamAdapter();
+    const disconnectCb = vi.fn();
+    adapter.onDisconnect(disconnectCb);
+    await adapter.init();
+
+    // enumerateDevices still has a videoinput (default mock from beforeEach)
+    const dcCall = mockAddEventListenerDevices.mock.calls.find(
+      (call) => call[0] === 'devicechange',
+    );
+    expect(dcCall).toBeDefined();
+    const dcHandler = dcCall![1] as () => Promise<void>;
+    await dcHandler();
+
+    expect(disconnectCb).not.toHaveBeenCalled();
+  });
+});
+
+describe('WebcamAdapter permission error handling', () => {
+  it('rethrows NotAllowedError so the caller can handle permission-denied state', async () => {
+    const notAllowedError = Object.assign(new DOMException('Permission denied', 'NotAllowedError'), { name: 'NotAllowedError' });
+    mockGetUserMedia.mockRejectedValueOnce(notAllowedError);
+
+    const adapter = new WebcamAdapter();
+    await expect(adapter.init()).rejects.toMatchObject({ name: 'NotAllowedError' });
+  });
+});
+
 describe('WebcamAdapter.capture()', () => {
   it('resolves with a Blob (OffscreenCanvas fallback path)', async () => {
     // Ensure ImageCapture is NOT in window for canvas fallback path

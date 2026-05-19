@@ -188,4 +188,31 @@ describe('showDisconnect() / hideDisconnect()', () => {
     hideDisconnect();
     expect(session.disconnected).toBe(false);
   });
+
+  it('showDisconnect preserves screen, shots, and currentShotIndex — only disconnected changes', () => {
+    // Establish a non-default state before calling showDisconnect
+    session.screen = 'review';
+    mockCreateObjectURL.mockReturnValueOnce('blob:shot-a');
+    saveShot(new Blob(['a']), 0);
+    session.currentShotIndex = 2;
+
+    showDisconnect();
+
+    expect(session.disconnected).toBe(true);
+    expect(session.screen).toBe('review');
+    expect(session.shots.length).toBe(1);
+    expect(session.currentShotIndex).toBe(2);
+  });
+
+  it('hideDisconnect preserves screen, shots, and currentShotIndex — only disconnected changes', () => {
+    session.screen = 'countdown_preview';
+    session.currentShotIndex = 1;
+    showDisconnect();
+
+    hideDisconnect();
+
+    expect(session.disconnected).toBe(false);
+    expect(session.screen).toBe('countdown_preview');
+    expect(session.currentShotIndex).toBe(1);
+  });
 });
