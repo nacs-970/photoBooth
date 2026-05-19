@@ -140,7 +140,9 @@ describe('WebcamAdapter.capture()', () => {
       }),
       convertToBlob: vi.fn().mockResolvedValue(mockBlob),
     };
-    (globalThis as any).OffscreenCanvas = vi.fn().mockImplementation(() => mockCanvas);
+    // Use a proper constructor function so `new OffscreenCanvas(...)` works
+    function MockOffscreenCanvas() { return mockCanvas; }
+    (globalThis as any).OffscreenCanvas = MockOffscreenCanvas;
 
     const videoEl = {
       srcObject: null as unknown,
