@@ -222,6 +222,26 @@ No new network endpoints, auth paths, or schema changes introduced. The capture 
 - The goToReview() function is the handoff point Plan 03 builds on.
 - All existing patterns (CameraAdapter, session state machine, audio module) are stable — Plan 03 should import and use without modification.
 
+## Self-Check: PASSED
+
+All created files confirmed present:
+- FOUND: web/src/lib/audio.ts
+- FOUND: web/src/lib/audio.test.ts
+- FOUND: web/src/components/CountdownRing.svelte
+- FOUND: web/src/components/FlashOverlay.svelte
+- FOUND: web/src/components/FlashOverlay.test.ts
+- FOUND: web/src/screens/CountdownScreen.svelte
+- FOUND: web/public/sounds/shutter.mp3
+- FOUND: .planning/phases/01-foundation-webcam-session-loop/01-02-SUMMARY.md
+
+All task commits confirmed in history:
+- FOUND: 03a1b4d (test — audio RED)
+- FOUND: 6c7c963 (feat — audio GREEN)
+- FOUND: 6553aa0 (test — FlashOverlay RED)
+- FOUND: 1155c2c (feat — FlashOverlay + CountdownRing GREEN)
+- FOUND: 2b3cfc8 (test — goToReview RED)
+- FOUND: 21c5170 (feat — CountdownScreen + wiring GREEN)
+
 ---
 *Phase: 01-foundation-webcam-session-loop*
 *Completed: 2026-05-20*
