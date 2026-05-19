@@ -4,8 +4,8 @@ import { SHOT_COUNT, COUNTDOWN_MS } from './config.ts';
 /**
  * Session state machine.
  *
- * CRITICAL (Pitfall 4): Export an object, NOT primitives.
- * Exporting primitives (`export let screen = $state(...)`) breaks cross-module reactivity in Svelte 5.
+ * CRITICAL (Pitfall 4 — RESEARCH.md): Export an object, NOT individual primitive bindings.
+ * Primitive bindings cannot be re-assigned across module boundaries in Svelte 5.
  * Object property access is proxied and reactive across module boundaries.
  */
 export const session = $state({
