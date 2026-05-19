@@ -7,6 +7,7 @@ import {
   resetSession,
   showDisconnect,
   hideDisconnect,
+  goToReview,
 } from './session.svelte.ts';
 
 // Mock URL.createObjectURL and URL.revokeObjectURL
@@ -124,6 +125,17 @@ describe('resetSession()', () => {
     expect(session.shots.length).toBe(0);
     expect(session.currentShotIndex).toBe(0);
     expect(session.screen).toBe('idle');
+  });
+});
+
+describe('goToReview()', () => {
+  it('sets session.screen to "review"', () => {
+    startSession(); // get into countdown_preview state
+    expect(session.screen).toBe('countdown_preview');
+
+    goToReview();
+
+    expect(session.screen).toBe('review');
   });
 });
 
