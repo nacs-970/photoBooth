@@ -4,6 +4,7 @@
   import PrimaryButton from '../components/PrimaryButton.svelte';
   import { startSession } from '$lib/session.svelte.ts';
   import { cameraAdapter } from '$lib/camera/adapter.ts';
+  import { unlockAudio } from '$lib/audio.ts';
 
   onMount(async () => {
     try {
@@ -16,6 +17,10 @@
   });
 
   function handleStart() {
+    // CRITICAL — Pitfall 2, T-02-Aud: unlockAudio MUST be called synchronously
+    // in the same click handler as startSession(), with NO await between them.
+    // Any async gap breaks user-gesture inheritance and causes NotAllowedError.
+    unlockAudio();
     startSession();
   }
 </script>

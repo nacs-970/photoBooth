@@ -5,6 +5,7 @@
   import { session, setCameraInfo } from '$lib/session.svelte.ts';
   import type { CameraInfo } from '$lib/types.ts';
   import IdleScreen from './screens/IdleScreen.svelte';
+  import CountdownScreen from './screens/CountdownScreen.svelte';
 
   onMount(async () => {
     try {
@@ -24,11 +25,11 @@
     {#if session.screen === 'idle'}
       <IdleScreen />
     {:else if session.screen === 'countdown_preview'}
-      <div class="placeholder">Countdown screen placeholder — Plan 02 wires this up</div>
+      <CountdownScreen />
     {:else if session.screen === 'review'}
-      <div class="placeholder">Review screen placeholder — Plan 02 wires this up</div>
+      <div class="placeholder">Shot {session.currentShotIndex + 1} captured — Plan 03 wires Review</div>
     {:else if session.screen === 'photo_grid'}
-      <div class="placeholder">Photo grid placeholder — Plan 03 wires this up</div>
+      <div class="placeholder">Photo grid — Plan 03 wires this up</div>
     {/if}
   </div>
 {/key}

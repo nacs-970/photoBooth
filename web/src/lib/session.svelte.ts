@@ -68,6 +68,14 @@ export function resetSession(): void {
 }
 
 /**
+ * Transition to the review screen.
+ * Called by CountdownScreen after capture + flash sequence completes.
+ */
+export function goToReview(): void {
+  session.screen = 'review';
+}
+
+/**
  * Show the disconnect modal (CAM-04 — Plan 04 wires the full modal component).
  */
 export function showDisconnect(): void {
