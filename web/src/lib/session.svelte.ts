@@ -44,16 +44,35 @@ export function saveShot(blob: Blob, index: number): void {
 }
 
 /**
- * Advance to the next shot.
- * Increments currentShotIndex. Transitions to photo_grid after all shots taken.
+ * Keep the current shot and advance.
+ * If this is the last shot (index === shotCount - 1): transition to photo_grid.
+ * Otherwise: increment currentShotIndex and transition to countdown_preview.
+ * NOTE: does NOT increment past the last index — screen code uses currentShotIndex to display the grid.
  */
-export function nextShot(): void {
-  session.currentShotIndex++;
-  if (session.currentShotIndex >= session.config.shotCount) {
+export function keepShot(): void {
+  if (session.currentShotIndex >= session.config.shotCount - 1) {
     session.screen = 'photo_grid';
   } else {
+    session.currentShotIndex++;
     session.screen = 'countdown_preview';
   }
+}
+
+/**
+ * Retake the current shot.
+ * Returns to countdown_preview WITHOUT changing currentShotIndex.
+ * The existing shot at that index remains until the next saveShot() call revokes and overwrites it.
+ */
+export function retakeShot(): void {
+  session.screen = 'countdown_preview';
+}
+
+/**
+ * @deprecated Use keepShot() instead. This alias is kept for Plan 01/02 contract compatibility.
+ * Advance to the next shot — delegates to keepShot().
+ */
+export function nextShot(): void {
+  keepShot();
 }
 
 /**
