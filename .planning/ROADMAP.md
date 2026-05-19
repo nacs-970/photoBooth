@@ -31,7 +31,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Guest completes a configurable multi-shot session (default 4 shots, 3-second countdown) with a white flash and shutter sound on every capture
   4. After each capture the guest sees a thumbnail review with a working "Retake this shot" option before the next countdown begins
   5. If the webcam is unplugged or revoked mid-session, the app shows a "Camera disconnected — check cable" screen with a working retry button instead of crashing
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 01-01-PLAN.md — Walking Skeleton: scaffold, CameraAdapter interface, idle screen with live webcam preview, capability probe
+- [ ] 01-02-PLAN.md — Single countdown to capture: countdown ring, flash, shutter sound, one Blob saved
+- [ ] 01-03-PLAN.md — Multi-shot session with per-shot retake, photo grid stub, reset to idle
+- [ ] 01-04-PLAN.md — Camera disconnect modal with retry (CAM-04)
 **UI hint**: yes
 
 ### Phase 2: Tethered DSLR Capture (gphoto2)
@@ -94,7 +99,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 (Phase 2 and Phase 3 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Webcam Session Loop | 0/TBD | Not started | - |
+| 1. Foundation & Webcam Session Loop | 0/4 | Planned | - |
 | 2. Tethered DSLR Capture (gphoto2) | 0/TBD | Not started | - |
 | 3. Template Library & Picker | 0/TBD | Not started | - |
 | 4. Canvas Strip Editor | 0/TBD | Not started | - |
