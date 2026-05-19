@@ -20,5 +20,6 @@ export default defineConfig({
     environment: 'happy-dom',
     setupFiles: ['./vitest-setup.ts'],
     passWithNoTests: true,
+    include: ['**/*.{test,spec}.?(c|m)[jt]s?(x)', '**/*.test.svelte.ts'],
   },
 });
