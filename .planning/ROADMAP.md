@@ -12,7 +12,7 @@ PhotoBooth ships as five vertical MVP slices. We first prove the full session lo
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation & Webcam Session Loop** - Scaffold the app and ship a full countdown → capture × N → retake session using getUserMedia behind a camera adapter
+- [x] **Phase 1: Foundation & Webcam Session Loop** - Scaffold the app and ship a full countdown → capture × N → retake session using getUserMedia behind a camera adapter
 - [ ] **Phase 2: Tethered DSLR Capture (gphoto2)** - Add a gphoto2 live-view + shutter-trigger adapter so Mac/Linux sessions fire the real DSLR
 - [ ] **Phase 3: Template Library & Picker** - Host can import/activate strip templates in an Admin Panel; guest picks one before each session
 - [ ] **Phase 4: Canvas Strip Editor** - Captured photos auto-fill template slot regions, guest can reorder layers, and the composite exports as JPEG
@@ -35,16 +35,16 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 
 **Wave 1**
-- [ ] 01-01-PLAN.md — Walking Skeleton: scaffold, CameraAdapter interface, idle screen with live webcam preview, capability probe
+- [x] 01-01-PLAN.md — Walking Skeleton: scaffold, CameraAdapter interface, idle screen with live webcam preview, capability probe
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 01-02-PLAN.md — Single countdown to capture: countdown ring, flash, shutter sound, one Blob saved
+- [x] 01-02-PLAN.md — Single countdown to capture: countdown ring, flash, shutter sound, one Blob saved
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 01-03-PLAN.md — Multi-shot session with per-shot retake, photo grid stub, reset to idle
+- [x] 01-03-PLAN.md — Multi-shot session with per-shot retake, photo grid stub, reset to idle
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 01-04-PLAN.md — Camera disconnect modal with retry (CAM-04)
+- [x] 01-04-PLAN.md — Camera disconnect modal with retry (CAM-04)
 
 Cross-cutting constraints:
 - `CameraAdapter` interface (defined in 01-01) is the contract all subsequent plans call — no plan may redefine it
