@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import type { CameraAdapter } from '$lib/camera/CameraAdapter.ts';
 
   interface Props {
@@ -9,12 +9,26 @@
 
   let videoEl: HTMLVideoElement;
 
+  function reAttach() {
+    if (adapter && videoEl) {
+      adapter.attachPreview(videoEl).catch((err) => {
+        console.error('[LivePreview] re-attach after retry failed:', err);
+      });
+    }
+  }
+
   onMount(() => {
     if (adapter && videoEl) {
       adapter.attachPreview(videoEl).catch((err) => {
         console.error('[LivePreview] attachPreview failed:', err);
       });
     }
+    // Listen for camera-reattach event dispatched by App.svelte handleRetry on success
+    window.addEventListener('camera-reattach', reAttach);
+  });
+
+  onDestroy(() => {
+    window.removeEventListener('camera-reattach', reAttach);
   });
 </script>
 
