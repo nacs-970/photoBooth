@@ -52,10 +52,12 @@ Inherited from Phase 1 — see `01-UI-SPEC.md`. Sizes (18, 24, 32, 96px), weight
 
 | Role | Size | Usage in CameraSelectScreen |
 |------|------|-----------------------------|
-| Display | 96px / 600 | Not used on this screen |
-| Heading | 32px / 600 | Screen heading "Select Camera"; tile camera name |
+| Display | 96px / 600 | Tile camera name ("Tethered DSLR", "Webcam") — the primary choice element |
+| Heading | 32px / 600 | Screen heading "Select Camera" — instruction label, lower visual rank than tile names |
 | Label | 24px / 600 | Not used on this screen |
 | Body | 18px / 400 | Status pill text ("Connected", "Not detected", "Checking…", "Available") |
+
+This is the correct hierarchy for a kiosk picker: the choices (tile names at Display) dominate; the instruction (heading at Heading) reads subordinate. Display was unused on this screen in the first draft — applying it here closes the rank gap.
 
 ---
 
@@ -71,16 +73,17 @@ Inherited from Phase 1. Source-of-truth values (do not use prompt paraphrases):
 | Neutral text | `#F5F5F7` |
 | Muted text | `#9A9AA3` |
 
-**Phase 2 addition — semantic status token (not a surface):**
+**Phase 2 additions:**
 
 | Token | Value | Reserved for |
 |-------|-------|--------------|
 | `--color-status-connected` | `#3DDC84` | Dot indicator in "Connected" status pill on DSLR tile — status signal only, never a fill on interactive surfaces |
-| `--color-status-unavailable` | `#9A9AA3` | Dot indicator in "Not detected" status pill — same value as Muted text; no new hex needed |
+| `--color-status-unavailable` | `#9A9AA3` | Dot indicator in "Not detected" status pill — same value as Muted text; no new hex |
+| `--color-surface-pressed` | `#2A2A2F` | Tile background during press feedback (100ms shift from Secondary, then return) — tile surfaces only, not buttons |
 
-These tokens extend the Phase 1 palette as signal colors (not surface colors). They do not participate in the 60/30/10 surface split.
+The status tokens extend the Phase 1 palette as signal colors (not surface colors). They do not participate in the 60/30/10 surface split. `--color-surface-pressed` is a surface variant, lighter than Secondary, used exclusively for tile press feedback.
 
-**Accent ruling for tiles:** Tiles are Secondary surface (`#1F1F25`) with neutral text. Accent (`#FFCC00`) does NOT spread to tile fills or tile borders. Accent is already reserved for specific CTAs in Phase 1; adding tile surfaces would dilute that reservation. On tap (100ms press feedback), the tile background momentarily shifts to `#2A2A2F` (slightly lighter than Secondary) — same button-press-feedback mechanic as Phase 1 PrimaryButton scale effect, adapted for a surface-fill tile.
+**Accent ruling for tiles:** Tiles are Secondary surface (`#1F1F25`) with neutral text. Accent (`#FFCC00`) does NOT spread to tile fills or tile borders. Accent is already reserved for specific CTAs in Phase 1; adding tile surfaces would dilute that reservation.
 
 ---
 
@@ -110,14 +113,15 @@ Each tile is a full interactive button (touch target already met by 280×320 min
 
 **Tile internal layout (top to bottom, vertically centered):**
 
-1. **Camera icon area** — 80px × 80px, centered horizontally, 32px (xl) from tile top. Phase 2 uses a text glyph placeholder (no icon library in scope): "DSLR" or "Webcam" in Heading size (32px / 600 semibold), color `#F5F5F7`. Phases 3+ may replace with icons.
-2. **Camera name** — Heading size (32px / 600 semibold), `#F5F5F7`, centered horizontally, 16px (md) below icon area.
-3. **Status pill** — Body size (18px / 400 regular), centered horizontally, 16px (md) below camera name. Contains: optional 8px filled dot + single space + status text. See pill states in Color section above.
-4. **Tile bottom padding** — 32px (xl) from status pill to tile bottom edge.
+1. **Camera name** — Display size (96px / 600 semibold), `#F5F5F7`, centered horizontally, 32px (xl) from tile top. This is the entire primary content of the tile — the large numeral equivalent for this screen.
+2. **Status pill** — Body size (18px / 400 regular), centered horizontally, 16px (md) below camera name. Contains: optional 8px filled dot + single space + status text. See pill states in Color section above.
+3. **Tile bottom padding** — 32px (xl) from status pill to tile bottom edge.
 
-**Tile press feedback:** 100ms ease-out background shift from `#1F1F25` to `#2A2A2F` + 50ms return. No scale transform (tiles are large surfaces — scale feels wrong; color shift provides tactile confirmation without motion distraction).
+Note: No icon-area row. No icon library is in scope for Phase 2. The camera name at Display size is the visual anchor — an icon placeholder text glyph would duplicate the name. Icon slot deferred to Phase 3+ when an icon library lands.
 
-**"Not detected" tile affordance:** Tile is NOT visually disabled. Full opacity, same Secondary surface, same camera name in Neutral text. Only the status pill text and dot use Muted color. This is intentional: tapping the tile while DSLR is not detected triggers the DisconnectModal (D-08) — the host may have just plugged in the camera and the probe hasn't run yet. The tile must look tappable.
+**Tile press feedback:** 100ms ease-out background shift from `#1F1F25` to `#2A2A2F` + 50ms return. No scale transform (tiles are large surfaces — scale feels wrong on a 280×320 card; color shift provides tactile confirmation without motion distraction).
+
+**"Not detected" tile affordance:** Tile is NOT visually disabled. Full opacity, same Secondary surface, camera name in Neutral text at Display size. Only the status pill text and dot use Muted color. This is intentional: tapping the tile while DSLR is not detected triggers the DisconnectModal (D-08) — the host may have just plugged in the camera and the probe hasn't run yet. The tile must look tappable.
 
 ### Detection Probe Behavior
 
@@ -125,6 +129,7 @@ Each tile is a full interactive button (touch target already met by 280×320 min
 - While probe is in-flight: DSLR tile shows "Checking…" in Muted text — no dot.
 - After probe resolves: status pill updates with 150ms ease-in fade to the resolved state (Connected or Not detected).
 - No polling — probe does not repeat. Refresh requires app restart or a future "Recheck" control (out of scope for Phase 2).
+- **Retry behavior:** When the host taps the DSLR tile and `TetheredAdapter.init()` fails (e.g. DSLR not connected), the DisconnectModal appears. Tapping Retry calls `cameraAdapter.init()` again — it does NOT re-run the `/api/camera/info` probe. The probe is mount-only; `init()` is the recovery path.
 
 ---
 
@@ -152,13 +157,13 @@ All Phase 1 copy is inherited verbatim. Phase 2 adds the following.
 
 ## Component Inventory (Phase 2 extensions)
 
-Phase 1 components are inherited unchanged. Phase 2 adds one component and extends one.
+Phase 1 components are inherited unchanged. Phase 2 adds one component and extends two.
 
 | Component | Phase | Change | Detail |
 |-----------|-------|--------|--------|
 | `<LivePreview>` | Phase 1 | Extended | Must now handle `<img>` (MJPEG) in addition to `<video>` (getUserMedia). Adapter-type check: if `TetheredAdapter`, render `<img src="/api/camera/stream">` with a `?t={Date.now()}` cache-buster appended on Retry. If `WebcamAdapter`, render `<video>` as before. Visual appearance unchanged. |
 | `<DisconnectModal>` | Phase 1 | Extended | Add optional `message: string` prop. Default: `"Check the cable and try again."` When `-53` USB conflict detected, caller passes: `"Camera in use by another app — quit Image Capture, Shotwell, or gvfs, then tap Retry."` Modal layout unchanged. |
-| `<CameraTile>` | Phase 2 | New | Interactive tile for camera source selection. Props: `cameraName: string`, `status: 'checking' | 'connected' | 'not-detected' | 'available'`, `onSelect: () => void`. Renders camera name, status pill, press feedback. Not a general-purpose component — single use in CameraSelectScreen. |
+| `<CameraTile>` | Phase 2 | New | Interactive tile for camera source selection. Props: `cameraName: string`, `status: 'checking' | 'connected' | 'not-detected' | 'available'`, `onSelect: () => void`. Renders camera name at Display size, status pill, press feedback. Single-use in CameraSelectScreen. |
 | `<CameraSelectScreen>` | Phase 2 | New | Full-screen, dark background. Screen heading + two `<CameraTile>` instances side by side. On tile tap: mutate `cameraAdapter` singleton (D-04), then transition `session.screen` to `'idle'`. |
 
 ---
@@ -169,7 +174,7 @@ Phase 1 screen table is inherited. Phase 2 adds:
 
 | Screen | Dominant Visual | Accent Surface |
 |--------|----------------|----------------|
-| CameraSelectScreen | Two tiles on dominant surface — tiles are the entire content | None — accent is not used on this screen; status dot is `#3DDC84` (signal, not accent) |
+| CameraSelectScreen | Two tiles on dominant surface — tile names at Display size (96px) are the visual anchor | None — accent is not used on this screen; status dot is `#3DDC84` (signal, not accent) |
 
 ---
 
@@ -221,9 +226,13 @@ Inherited — not applicable. No registry tooling; no third-party blocks added i
 | LivePreview `<img>` vs `<video>` adapter-type branch | CONTEXT.md D-06 |
 | Color values — dominant, secondary, accent, text | Phase 1 `01-UI-SPEC.md` (not prompt paraphrase) |
 | `--color-status-connected` `#3DDC84` as signal token | Advisor review — status signal outside 60/30/10 surfaces |
+| `--color-surface-pressed` `#2A2A2F` declared in color table | Advisor review — undeclared hex flagged |
 | Accent not applied to tile surfaces | Advisor review + Phase 1 accent reservation rule |
 | "Not detected" tile full opacity (not disabled-looking) | CONTEXT.md D-08 — tile must be tappable for Retry path |
 | Tile dimensions 280×320px minimum | Inferred from kiosk 2–3ft viewing distance; Phase 1 touch-target pattern |
+| Camera name at Display (96px), no icon area | Advisor review — icon-area text glyph duplicated the name; Display is the visual anchor |
+| Screen heading at Heading (32px) — subordinate to tile names | Advisor review — correct hierarchy for kiosk picker |
 | Status pill "Checking…" while probe in-flight | Inferred from async probe behavior (CONTEXT.md D-02) |
+| Retry calls `init()`, not probe | Advisor review — probe is mount-only; init() is the recovery path |
 | Status pill 150ms fade-in | Claude's discretion — prevents flash of loading state on fast hardware |
 | Tile press: background shift (no scale transform) | Claude's discretion — scale feels wrong on 280×320 surface |
