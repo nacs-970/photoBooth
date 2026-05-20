@@ -1,4 +1,9 @@
-export type ScreenName = 'idle' | 'countdown_preview' | 'review' | 'photo_grid';
+export type ScreenName =
+  | 'camera_select'
+  | 'idle'
+  | 'countdown_preview'
+  | 'review'
+  | 'photo_grid';
 
 export interface Shot {
   blob: Blob;

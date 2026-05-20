@@ -9,11 +9,18 @@ import { SHOT_COUNT, COUNTDOWN_MS } from './config.ts';
  * Object property access is proxied and reactive across module boundaries.
  */
 export const session = $state({
-  screen: 'idle' as ScreenName,
+  screen: 'camera_select' as ScreenName,
   shots: [] as Shot[],
   currentShotIndex: 0,
   disconnected: false,
   cameraInfo: null as CameraInfo | null,
+  /**
+   * Wall-clock timestamp (Date.now()) of the first capture in the current session.
+   * Set lazily by TetheredAdapter.capture() on the first shot.
+   * Used to derive a stable per-session folder name on disk (Phase 2 Wave 4).
+   * Cleared back to null by resetSession() so sessions never share a folder.
+   */
+  sessionStartedAt: null as number | null,
   config: {
     shotCount: SHOT_COUNT,
     countdownMs: COUNTDOWN_MS,
@@ -80,6 +87,7 @@ export function nextShot(): void {
  * Revokes ALL object URLs before clearing shots array (T-01-IL mitigation).
  */
 export function resetSession(): void {
+  session.sessionStartedAt = null;
   session.shots.forEach((s) => URL.revokeObjectURL(s.objectUrl));
   session.shots = [];
   session.currentShotIndex = 0;
