@@ -1,16 +1,15 @@
 <script lang="ts">
   /**
    * CountdownRing — 240px SVG progress ring with centered numeral.
-   * Pattern 4: SVG stroke-dashoffset (RESEARCH.md)
-   * D-11: Fills as time passes; number centered in ring.
+   * Ring fill is CSS @keyframes (fires once on mount) — not JS-driven.
+   * Passing elapsed as a prop caused the transition to restart every 50ms,
+   * so the ring never completed. CSS animation is interrupt-free.
    *
    * Props:
-   *   elapsed: number — milliseconds elapsed since countdown start
-   *   countdownMs: number — total countdown duration (default COUNTDOWN_MS = 3000)
+   *   countdownMs: number — total countdown duration in ms (drives animation-duration)
    *   digit: number — discrete numeral to display (3 → 2 → 1)
    */
-  let { elapsed = 0, countdownMs = 3000, digit } = $props<{
-    elapsed: number;
+  let { countdownMs = 3000, digit } = $props<{
     countdownMs: number;
     digit: number;
   }>();
@@ -18,12 +17,15 @@
   const RADIUS = 108;
   const STROKE = 8;
   const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-
-  // dashoffset: full circumference at elapsed=0, 0 at elapsed=countdownMs
-  let dashoffset = $derived(CIRCUMFERENCE * (1 - elapsed / countdownMs));
 </script>
 
-<svg width="240" height="240" viewBox="0 0 240 240" aria-label="Countdown timer">
+<svg
+  width="240"
+  height="240"
+  viewBox="0 0 240 240"
+  aria-label="Countdown timer"
+  style="--circ: {CIRCUMFERENCE}; --cd-ms: {countdownMs}ms;"
+>
   <!-- Track ring (secondary surface) -->
   <circle
     cx="120"
@@ -33,8 +35,9 @@
     stroke-width={STROKE}
     fill="none"
   />
-  <!-- Progress arc — starts at top (rotate -90deg) -->
+  <!-- Progress arc — CSS animation fires once on mount, runs for countdownMs -->
   <circle
+    class="progress-arc"
     cx="120"
     cy="120"
     r={RADIUS}
@@ -43,9 +46,8 @@
     fill="none"
     stroke-linecap="round"
     stroke-dasharray={CIRCUMFERENCE}
-    stroke-dashoffset={dashoffset}
+    stroke-dashoffset={CIRCUMFERENCE}
     transform="rotate(-90 120 120)"
-    style="transition: stroke-dashoffset {countdownMs}ms linear;"
   />
   <!-- Centered countdown digit -->
   <text
@@ -58,3 +60,13 @@
     fill="var(--color-text)"
   >{digit}</text>
 </svg>
+
+<style>
+  .progress-arc {
+    animation: countdown-fill var(--cd-ms) linear forwards;
+  }
+  @keyframes countdown-fill {
+    from { stroke-dashoffset: var(--circ); }
+    to   { stroke-dashoffset: 0; }
+  }
+</style>

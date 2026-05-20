@@ -113,7 +113,7 @@
     {#if phase === 'pre'}
       <PrimaryButton onclick={handleStart} disabled={false}>Start</PrimaryButton>
     {:else if phase === 'counting' || phase === 'flashing'}
-      <CountdownRing {elapsed} countdownMs={COUNTDOWN_MS} {digit} />
+      <CountdownRing countdownMs={COUNTDOWN_MS} {digit} />
     {/if}
   </div>
 
