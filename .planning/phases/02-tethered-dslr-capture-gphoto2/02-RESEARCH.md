@@ -869,20 +869,20 @@ const { stdout, stderr } = await execFileAsync(
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **[RESOLVED] CameraAdapter.capture() has no shotIndex/sessionId args — how does TetheredAdapter get them?**
    - Resolution: `TetheredAdapter.capture()` imports `session` from `session.svelte.ts` and reads `session.currentShotIndex` (shot index) and `session.sessionStartedAt` (session ID) directly. The `CameraAdapter` interface is unchanged.
    - Required: Add `sessionStartedAt: number | null` field to `session` in `session.svelte.ts`. Initialize to `null`; TetheredAdapter sets it to `Date.now()` on first capture of each session (also reset to `null` in `resetSession()`).
    - Pattern 3 shows the full implementation.
 
-2. **LivePreview.svelte update strategy: single component or separate TetheredPreview.svelte?**
+2. **[RESOLVED] LivePreview.svelte update strategy: single component or separate TetheredPreview.svelte?**
    - What we know: Current `LivePreview.svelte` renders `<video>` + uses `videoEl` binding. TetheredAdapter needs `HTMLImageElement`. D-06 leaves this to Claude's Discretion.
-   - Recommendation: **Separate `TetheredPreview.svelte`** with `<img>` is cleaner. The reactive event surface differs (`<video>` has `loadedmetadata`/`readyState`; `<img>` has `load`/`error`). Parent screens use `{#if session.cameraInfo?.cameraMode === 'tethered'}<TetheredPreview />{:else}<LivePreview />{/if}`. No conditional logic inside a single component.
+   - RESOLVED: Extend existing `LivePreview.svelte` with a conditional `<img>` branch (`instanceof TetheredAdapter` check). Plan 03 Task 2 implements this — `{#if adapter instanceof TetheredAdapter}<img ...>{:else}<video ...>{/if}`. This avoids a new component and keeps preview rendering logic co-located.
 
-3. **Does `--capture-movie` stop automatically when the HTTP connection closes?**
+3. **[RESOLVED] Does `--capture-movie` stop automatically when the HTTP connection closes?**
    - What we know: `request.raw.on('close', ...)` can call `cameraService.stopStream()`. But if the browser disconnects abruptly (tab close), the server may not immediately detect it.
-   - Recommendation: Attach the `close` listener in the route handler. Additionally, set `Connection: close` on the response header so the OS closes the TCP connection promptly. Use `proc.on('error')`/`proc.on('close')` to clean up `streamProc` reference.
+   - RESOLVED: Attach the `close` listener in the route handler (Plan 03 Task 1 action). Set `Connection: close` on the response header. Use `proc.on('error')`/`proc.on('close')` to clean up `streamProc` reference. This is the prescribed pattern in CameraService.
 
 ---
 
