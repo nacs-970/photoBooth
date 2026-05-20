@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 2 planned — all 5 waves planned
-last_updated: "2026-05-20T08:40:41.240Z"
-last_activity: 2026-05-20 -- Phase 02 planning complete
+last_updated: "2026-05-20T08:44:39.433Z"
+last_activity: 2026-05-20 -- Phase 02 execution started
 progress:
   total_phases: 5
   completed_phases: 1
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-19)
 
 **Core value:** Guests walk away with a custom photo strip they can instantly share via QR code, captured with a real camera.
-**Current focus:** Phase 2 — Tethered DSLR Capture (gphoto2)
+**Current focus:** Phase 02 — tethered-dslr-capture-gphoto2
 
 ## Current Position
 
-Phase: 2 of 5 (Tethered DSLR Capture — gphoto2)
-Plan: 0 of 5 in current phase (not yet started)
-Status: Ready to execute
-Last activity: 2026-05-20 -- Phase 02 planning complete
+Phase: 02 (tethered-dslr-capture-gphoto2) — EXECUTING
+Plan: 1 of 5
+Status: Executing Phase 02
+Last activity: 2026-05-20 -- Phase 02 execution started
 
 Progress: [██████░░░░░░░░░░░░░░] 20% (Phase 1 of 5 complete; Phase 2 planned)
 
