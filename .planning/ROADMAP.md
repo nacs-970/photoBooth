@@ -63,7 +63,29 @@ Cross-cutting constraints:
   2. Pressing "Start" runs the full Phase 1 session and each capture audibly fires the DSLR shutter and returns the camera's JPEG (not a webcam frame) into the review thumbnail
   3. Unplugging the DSLR mid-session surfaces the same "Camera disconnected" recovery UI from Phase 1, and reconnecting + retry resumes without restarting the app
   4. Re-launching the app while a previous gphoto2/PTP claim is held (e.g. gvfs auto-mount) recovers cleanly instead of erroring out permanently
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+
+**Wave 1**
+- [ ] 02-01-PLAN.md — Camera picker foundation: CameraSelectScreen, ScreenName + session shape changes, adapter setter, test scaffolds
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 02-02-PLAN.md — FPS spike + stream strategy decision: measure gphoto2 --capture-movie FPS on actual DSLR, choose movie vs preview-poll
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 02-03-PLAN.md — DSLR live preview: CameraService singleton + p-queue, GET /api/camera/stream MJPEG, TetheredAdapter init/attachPreview, LivePreview img/video branch
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 02-04-PLAN.md — DSLR capture: POST /api/camera/capture, CameraService.capture(), TetheredAdapter.capture(), disk persistence, stream reconnect
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 02-05-PLAN.md — USB conflict + disconnect recovery: DisconnectModal message prop, USB_CONFLICT error variant, mid-session unplug handling
+
+Cross-cutting constraints:
+- `CameraAdapter` interface is locked — no plan may change init/attachPreview/capture/dispose/onDisconnect signatures
+- All gphoto2 ops go through Node backend via CameraService — never spawn gphoto2 in browser code
+- p-queue concurrency 1 is non-negotiable — stream and capture cannot run simultaneously on one USB device
+- Do NOT break the 42 existing tests from Phase 1
 **UI hint**: yes
 
 ### Phase 3: Template Library & Picker
@@ -113,8 +135,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 (Phase 2 and Phase 3 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Webcam Session Loop | 0/4 | Planned | - |
-| 2. Tethered DSLR Capture (gphoto2) | 0/TBD | Not started | - |
+| 1. Foundation & Webcam Session Loop | 4/4 | Complete | 2026-05-20 |
+| 2. Tethered DSLR Capture (gphoto2) | 0/5 | Planned | - |
 | 3. Template Library & Picker | 0/TBD | Not started | - |
 | 4. Canvas Strip Editor | 0/TBD | Not started | - |
 | 5. GIF, Share & Offline Fallback | 0/TBD | Not started | - |

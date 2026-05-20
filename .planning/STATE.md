@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: phase complete — verified
-stopped_at: Phase 2 discussed — ready for research + planning
+status: phase planned — ready to execute
+stopped_at: Phase 2 planned — 5 plans created, ready for execution
 last_updated: "2026-05-20T00:00:00.000Z"
-last_activity: 2026-05-20 — Phase 2 context gathered: MJPEG passthrough, USB conflict handling, capture flow, startup picker
+last_activity: 2026-05-20 — Phase 2 planned: 5 wave plans covering CameraSelectScreen, MJPEG stream, capture endpoint, USB conflict recovery
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 4
+  total_plans: 9
   completed_plans: 4
-  percent: 100
+  percent: 44
 ---
 
 # Project State
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-19)
 
 **Core value:** Guests walk away with a custom photo strip they can instantly share via QR code, captured with a real camera.
-**Current focus:** Phase 1 — Foundation & Webcam Session Loop
+**Current focus:** Phase 2 — Tethered DSLR Capture (gphoto2)
 
 ## Current Position
 
-Phase: 1 of 5 (Foundation & Webcam Session Loop)
-Plan: 4 of 4 in current phase
-Status: Executed — awaiting manual smoke test (run `npm run dev`, see VERIFICATION.md)
-Last activity: 2026-05-20 — Phase 1 all 4 plans executed (42/42 tests pass, 5/5 ROADMAP SC verified)
+Phase: 2 of 5 (Tethered DSLR Capture — gphoto2)
+Plan: 0 of 5 in current phase (not yet started)
+Status: Planned — ready to execute
+Last activity: 2026-05-20 — Phase 2 planned: 5 PLAN.md files created across 5 sequential waves
 
-Progress: [██████████] 100% (Phase 1 of 5)
+Progress: [██████░░░░░░░░░░░░░░] 20% (Phase 1 of 5 complete; Phase 2 planned)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0
+- Total plans completed: 4
 - Average duration: —
 - Total execution time: —
 
@@ -44,7 +44,7 @@ Progress: [██████████] 100% (Phase 1 of 5)
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 1 (complete) | 4 | - | - |
 
 **Recent Trend:**
 
@@ -62,19 +62,27 @@ Recent decisions affecting current work:
 
 - Roadmap: Phases derived as vertical MVP slices, validating the camera adapter interface on getUserMedia (Phase 1) before gphoto2 (Phase 2) — the highest-risk integration sits in its own phase
 - Roadmap: Templates (Phase 3) split from the canvas editor (Phase 4) per research guidance; Phase 3 ends at "confirmed template chosen for session"
+- Phase 2 D-04: adapter.ts exports `let cameraAdapter` + `setCameraAdapter()` setter — ES module live binding pattern
+- Phase 2 D-05: GET /api/camera/stream uses multipart/x-mixed-replace with SOI/EOI byte scanning (not raw pipe)
+- Phase 2: p-queue concurrency 1 in CameraService — stream and capture are mutually exclusive on USB
+- Phase 2 Wave 2: FPS spike required before implementing stream handler — measured FPS determines movie vs preview-poll strategy
 
 ### Pending Todos
 
-None yet.
+- Execute Phase 2 Wave 1 (02-01-PLAN.md): Camera picker foundation
+- After Wave 1: run FPS spike (02-02-PLAN.md) with physical DSLR connected
+- After FPS decision: implement DSLR preview (02-03-PLAN.md)
+- After preview: implement DSLR capture (02-04-PLAN.md)
+- After capture: implement error recovery (02-05-PLAN.md)
 
 ### Blockers/Concerns
 
 Empirical gaps flagged by research to validate during execution:
 
-- gphoto2 MJPEG live-view on the target camera body (Phase 2 day 1 spike)
+- gphoto2 MJPEG live-view FPS on the target camera body (Phase 2 Wave 2 spike — REQUIRED before Wave 3)
+- gphoto2 USB device claim conflict (`-53` from gvfs/PTPCamera) at startup (Phase 2 Wave 5)
 - 0x0.st upload field name, CORS behavior, rate-limits (Phase 5 day 1)
 - gifenc quality on real event-photo content (Phase 5)
-- gphoto2 USB device claim conflict (`-53` from gvfs/PTPCamera) at startup (Phase 2)
 
 ## Deferred Items
 
@@ -86,6 +94,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-19
-Stopped at: Phase 1 planned — ready to execute
-Resume file: .planning/phases/01-foundation-webcam-session-loop/01-01-PLAN.md
+Last session: 2026-05-20
+Stopped at: Phase 2 planned — all 5 waves planned
+Resume file: .planning/phases/02-tethered-dslr-capture-gphoto2/02-01-PLAN.md
