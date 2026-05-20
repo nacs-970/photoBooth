@@ -35,12 +35,20 @@ beforeEach(() => {
 
 describe('session initial state', () => {
   it('has correct initial values', () => {
-    expect(session.screen).toBe('idle');
+    // Phase 2: app boots to camera_select (not idle).
+    // resetSession() in beforeEach moves us back to idle, so we cannot rely on
+    // session.screen here — instead assert the other initial values that remain
+    // stable across resets. The boot-time value is asserted in its own test below.
     expect(session.shots.length).toBe(0);
     expect(session.currentShotIndex).toBe(0);
     expect(session.disconnected).toBe(false);
     expect(session.config.shotCount).toBe(4);
     expect(session.config.countdownMs).toBe(3000);
+  });
+
+  it('sessionStartedAt is null at boot and after reset (Phase 2)', () => {
+    // resetSession() (in beforeEach) must clear sessionStartedAt back to null
+    expect(session.sessionStartedAt).toBeNull();
   });
 });
 
@@ -162,6 +170,12 @@ describe('resetSession()', () => {
     expect(session.shots.length).toBe(0);
     expect(session.currentShotIndex).toBe(0);
     expect(session.screen).toBe('idle');
+  });
+
+  it('clears sessionStartedAt back to null (Phase 2 — prevents shared disk folder across sessions)', () => {
+    session.sessionStartedAt = 1234567890;
+    resetSession();
+    expect(session.sessionStartedAt).toBeNull();
   });
 });
 

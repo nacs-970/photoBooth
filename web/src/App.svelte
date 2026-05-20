@@ -5,6 +5,7 @@
   import { session, setCameraInfo, hideDisconnect, showDisconnect } from '$lib/session.svelte.ts';
   import type { CameraInfo } from '$lib/types.ts';
   import { cameraAdapter } from '$lib/camera/adapter.ts';
+  import CameraSelectScreen from './screens/CameraSelectScreen.svelte';
   import IdleScreen from './screens/IdleScreen.svelte';
   import CountdownScreen from './screens/CountdownScreen.svelte';
   import ReviewScreen from './screens/ReviewScreen.svelte';
@@ -46,7 +47,9 @@
 
 {#key session.screen}
   <div class="screen-wrapper" transition:fade={{ duration: 250, easing: cubicOut }}>
-    {#if session.screen === 'idle'}
+    {#if session.screen === 'camera_select'}
+      <CameraSelectScreen />
+    {:else if session.screen === 'idle'}
       <IdleScreen />
     {:else if session.screen === 'countdown_preview'}
       <CountdownScreen />
