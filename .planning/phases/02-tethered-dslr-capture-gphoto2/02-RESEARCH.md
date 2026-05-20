@@ -275,8 +275,20 @@ class CameraService {
    * Emits raw JPEG bytes on the returned process stdout.
    * Caller (route handler) is responsible for scanning SOI/EOI and emitting multipart frames.
    * When the HTTP connection closes, caller must call stopStream().
+   *
+   * CRITICAL — queue guard: the stream GET handler must NOT call this while a capture
+   * is in-flight (queue is busy). Check `this.isCapturing` before spawning, or
+   * defer to `queue.add()` wrapping. Simplest: the route handler checks the queue size
+   * and returns 503 if queue.size > 0, forcing the browser to retry after capture.
    */
+  get isCapturing(): boolean {
+    return this.queue.size > 0 || this.queue.pending > 0;
+  }
+
   startStreamProcess(): ChildProcess {
+    if (this.isCapturing) {
+      throw new Error('CAPTURE_IN_PROGRESS');
+    }
     this.streamProc = spawn('gphoto2', ['--capture-movie', '--stdout']);
     return this.streamProc;
   }
@@ -422,14 +434,30 @@ export class TetheredAdapter implements CameraAdapter {
     };
   }
 
-  async capture(shotIndex?: number, sessionId?: number): Promise<Blob> {
-    const sid = sessionId ?? this.sessionId ?? Date.now();
-    this.sessionId ??= sid;
+  // NOTE: CameraAdapter.capture() is locked as capture(): Promise<Blob> — no args.
+  // session state (currentShotIndex, sessionStartedAt) is read directly from the
+  // session store. This keeps the interface unchanged.
+  async capture(): Promise<Blob> {
+    // Import inline to avoid circular module issues at test time (mock in tests)
+    const { session } = await import('$lib/session.svelte.ts');
+
+    // Initialize session ID on first capture; preserved until dispose() is called.
+    if (!this.sessionId) {
+      this.sessionId = session.sessionStartedAt ?? Date.now();
+      if (!session.sessionStartedAt) {
+        // Side-effect: stamp the session start time so all captures share the folder.
+        // session.sessionStartedAt must be added to session.svelte.ts (see Wave 0 tasks).
+        (session as Record<string, unknown>).sessionStartedAt = this.sessionId;
+      }
+    }
 
     const res = await fetch('/api/camera/capture', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ shotIndex: shotIndex ?? 0, sessionId: sid }),
+      body: JSON.stringify({
+        shotIndex: session.currentShotIndex,
+        sessionId: this.sessionId,
+      }),
     });
     if (!res.ok) throw new Error(`Capture failed: ${res.status}`);
 
@@ -458,7 +486,7 @@ export class TetheredAdapter implements CameraAdapter {
 }
 ```
 
-**Session ID note:** The adapter signature `capture(): Promise<Blob>` (no args) is the locked interface. `TetheredAdapter` needs session tracking internally. See Open Questions Q-1 for the recommended approach.
+**Session ID note (RESOLVED):** The adapter signature `capture(): Promise<Blob>` (no args) is locked. `TetheredAdapter` imports `session` from `session.svelte.ts` and reads `session.currentShotIndex` and `session.sessionStartedAt` directly inside `capture()`. Pattern 3 above shows the full implementation. `session.sessionStartedAt` must be added to `session.svelte.ts` in Wave 0 (see Open Questions Q-1 — marked Resolved).
 
 ### Pattern 4: CameraSelectScreen
 
@@ -611,6 +639,8 @@ if (stderr.includes('Could not claim the USB device') || stderr.includes('-53'))
 **Why it happens:** Camera-body-specific: how quickly the camera transfers preview frames over PTP/USB. Canon 6D has known lag issues; EOS 550D was reported at ~17 fps via libgphoto2 binding.
 
 **How to avoid:** Wave 0 spike task (first thing in Phase 2 execution): run `gphoto2 --capture-movie --stdout | ffplay -` against the actual connected camera and measure FPS + lag. If unacceptable, swap the `startStreamProcess()` implementation to `--capture-preview` polling loop. The endpoint interface (`GET /api/camera/stream`) does not change.
+
+**Camera-body checkpoint:** This spike requires a physical DSLR connected via USB. No camera was detected in the development environment at research time (`gphoto2 --auto-detect` returned empty). The planner MUST add a `checkpoint:human-verify` task before this spike: "Plug in DSLR camera via USB, then run FPS test." The spike cannot execute unattended.
 
 **Warning signs:** Preview feels sluggish; ffplay reports < 5 fps; camera model is known to have USB preview issues.
 
@@ -841,10 +871,10 @@ const { stdout, stderr } = await execFileAsync(
 
 ## Open Questions
 
-1. **CameraAdapter.capture() has no shotIndex/sessionId args — how does TetheredAdapter get them?**
-   - What we know: `CameraAdapter.capture(): Promise<Blob>` is locked (no args). TetheredAdapter needs `shotIndex` and `sessionId` for the POST body and for building the server-side file path.
-   - What's unclear: Whether to read `session.currentShotIndex` directly from TetheredAdapter (creating a dependency on the session store) or have the caller wrap `capture()`.
-   - Recommendation: Add `sessionStartedAt: number | null` to the `session` object in `session.svelte.ts`. In `TetheredAdapter.capture()`, read `session.currentShotIndex` and `session.sessionStartedAt` directly (import from `session.svelte.ts`). TetheredAdapter initializes `session.sessionStartedAt` on first capture if null (via a `startSession`-like call). This keeps the `CameraAdapter` interface unchanged.
+1. **[RESOLVED] CameraAdapter.capture() has no shotIndex/sessionId args — how does TetheredAdapter get them?**
+   - Resolution: `TetheredAdapter.capture()` imports `session` from `session.svelte.ts` and reads `session.currentShotIndex` (shot index) and `session.sessionStartedAt` (session ID) directly. The `CameraAdapter` interface is unchanged.
+   - Required: Add `sessionStartedAt: number | null` field to `session` in `session.svelte.ts`. Initialize to `null`; TetheredAdapter sets it to `Date.now()` on first capture of each session (also reset to `null` in `resetSession()`).
+   - Pattern 3 shows the full implementation.
 
 2. **LivePreview.svelte update strategy: single component or separate TetheredPreview.svelte?**
    - What we know: Current `LivePreview.svelte` renders `<video>` + uses `videoEl` binding. TetheredAdapter needs `HTMLImageElement`. D-06 leaves this to Claude's Discretion.
