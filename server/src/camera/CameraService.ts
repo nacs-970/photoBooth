@@ -8,86 +8,76 @@ const execFileAsync = promisify(execFile);
 
 export class CameraService {
   private queue = new PQueue({ concurrency: 1 });
-  private streamProc: ChildProcess | null = null;
-  private activePollProc: ChildProcess | null = null;
-  private pollTimer: NodeJS.Timeout | null = null;
   private isPolling = false;
+  private pollTimer: NodeJS.Timeout | null = null;
 
   async capture(sessionId: number, shotIndex: number): Promise<Buffer> {
+    // 1. Stop the polling loop from scheduling new frames
+    this.stopStream();
+
+    // 2. Queue the capture. It will automatically wait for the current preview frame (if any) to finish safely.
     return this.queue.add(async () => {
-      await this.stopStream();
-      // Wait a brief moment to ensure the OS releases the USB lock after SIGKILL
+      // Small pause to let the camera breathe between PTP sessions
       await new Promise(r => setTimeout(r, 200));
 
-      // Navigate up from the 'server' cwd to land in the repo root 'captures/' folder
       const dir = path.resolve('../captures', `session-${sessionId}`);
       await mkdir(dir, { recursive: true });
       const filePath = path.join(dir, `${shotIndex}.jpg`);
+      
       await execFileAsync('gphoto2', [
         '--capture-image-and-download',
         '--filename', filePath,
         '--force-overwrite',
-      ], { timeout: 10_000 });
+      ], { timeout: 15_000 });
+      
       return readFile(filePath);
     }) as Promise<Buffer>;
   }
 
   get isCapturing(): boolean {
+    // True if there is a pending capture task in the queue
     return this.queue.size > 0 || this.queue.pending > 0;
   }
 
-  async stopStream() {
+  stopStream() {
     this.isPolling = false;
     if (this.pollTimer) {
       clearTimeout(this.pollTimer);
       this.pollTimer = null;
     }
-    
-    // Do NOT kill the active gphoto2 process! Interrupting it mid-transaction
-    // leaves the physical camera's PTP session open and causes the camera to freeze.
-    // Instead, wait for the current short-lived poll to finish naturally.
-    if (this.activePollProc) {
-      await new Promise<void>((resolve) => {
-        const timeout = setTimeout(() => {
-          // Only force kill if it's completely stuck for 3 seconds
-          if (this.activePollProc) this.activePollProc.kill('SIGKILL');
-          resolve();
-        }, 3000);
-        
-        this.activePollProc!.on('exit', () => {
-          clearTimeout(timeout);
-          resolve();
-        });
-      });
-      this.activePollProc = null;
-    }
   }
 
   startStreamProcess(onFrame: (frame: Buffer) => void): void {
-    if (this.isCapturing) {
-      throw new Error('CAPTURE_IN_PROGRESS');
-    }
-    
-    this.stopStream();
+    if (this.isPolling) return;
     this.isPolling = true;
-    
-    const poll = () => {
+
+    const poll = async () => {
       if (!this.isPolling) return;
-      
-      this.activePollProc = execFile('gphoto2', [
-        '--capture-preview',
-        '--stdout'
-      ], {
-        timeout: 5000,
-        encoding: 'buffer'
-      }, (err, stdout) => {
-        this.activePollProc = null;
-        if (!this.isPolling) return;
-        if (!err && stdout && stdout.length > 0) {
-          onFrame(stdout as Buffer);
-        }
-        this.pollTimer = setTimeout(poll, 150);
-      });
+
+      try {
+        await this.queue.add(async () => {
+          if (!this.isPolling) return;
+          const { stdout } = await execFileAsync('gphoto2', [
+            '--capture-preview',
+            '--stdout'
+          ], {
+            timeout: 5000,
+            encoding: 'buffer'
+          });
+          
+          if (this.isPolling && stdout && stdout.length > 0) {
+            onFrame(stdout as Buffer);
+          }
+        });
+      } catch (err) {
+        // Ignore errors during preview fetch (e.g. timeout, camera busy)
+      }
+
+      if (this.isPolling) {
+        // Schedule next frame. The 100ms delay ensures the queue empties
+        // allowing capture() to jump in front of the next frame.
+        this.pollTimer = setTimeout(poll, 100);
+      }
     };
 
     poll();
@@ -95,7 +85,9 @@ export class CameraService {
 
   async probe(): Promise<{ available: boolean; conflictError?: string }> {
     try {
-      await execFileAsync('gphoto2', ['--auto-detect'], { timeout: 3000 });
+      await this.queue.add(async () => {
+        await execFileAsync('gphoto2', ['--auto-detect'], { timeout: 3000 });
+      });
       return { available: true };
     } catch (err: any) {
       const stderr = err.stderr ? err.stderr.toString() : '';
