@@ -43,29 +43,22 @@ export class CameraService {
       this.pollTimer = null;
     }
     
-    const killAndAwait = async (proc: ChildProcess) => {
-      if (!proc || proc.killed) return;
-      return new Promise<void>((resolve) => {
-        let timeout = setTimeout(() => {
-          proc.kill('SIGKILL');
+    // Do NOT kill the active gphoto2 process! Interrupting it mid-transaction
+    // leaves the physical camera's PTP session open and causes the camera to freeze.
+    // Instead, wait for the current short-lived poll to finish naturally.
+    if (this.activePollProc) {
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(() => {
+          // Only force kill if it's completely stuck for 3 seconds
+          if (this.activePollProc) this.activePollProc.kill('SIGKILL');
           resolve();
-        }, 1500);
+        }, 3000);
         
-        proc.on('exit', () => {
+        this.activePollProc!.on('exit', () => {
           clearTimeout(timeout);
           resolve();
         });
-        
-        proc.kill('SIGTERM');
       });
-    };
-
-    if (this.streamProc) {
-      await killAndAwait(this.streamProc);
-      this.streamProc = null;
-    }
-    if (this.activePollProc) {
-      await killAndAwait(this.activePollProc);
       this.activePollProc = null;
     }
   }
