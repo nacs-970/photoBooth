@@ -22,7 +22,7 @@
     }
   }
 
-  onMount(() => {
+  $effect(() => {
     if (adapter) {
       const el = adapter instanceof TetheredAdapter ? imgEl : videoEl;
       if (el) {
@@ -31,6 +31,9 @@
         });
       }
     }
+  });
+
+  onMount(() => {
     // Listen for camera-reattach event dispatched by App.svelte handleRetry on success
     window.addEventListener('camera-reattach', reAttach);
   });
