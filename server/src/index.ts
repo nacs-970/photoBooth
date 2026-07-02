@@ -1,5 +1,5 @@
 import Fastify from 'fastify';
-import { cameraRoutes } from './routes/camera.ts';
+import { cameraRoutes } from './routes/camera.js';
 
 const app = Fastify({ logger: true });
 
