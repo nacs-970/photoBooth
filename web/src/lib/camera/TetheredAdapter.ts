@@ -25,12 +25,34 @@ export class TetheredAdapter implements CameraAdapter {
   }
 
   async capture(): Promise<Blob> {
-    throw new Error('TetheredAdapter is a Phase 2 placeholder');
+    const { session } = await import('$lib/session.svelte.ts');
+    if (!session.sessionStartedAt) {
+      session.sessionStartedAt = Date.now();
+    }
+    this.sessionId = session.sessionStartedAt;
+
+    const res = await fetch('/api/camera/capture', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        shotIndex: session.currentShotIndex,
+        sessionId: this.sessionId,
+      }),
+    });
+    if (!res.ok) throw new Error(`Capture failed: ${res.status}`);
+
+    // Re-connect preview: stream was killed during capture.
+    // Cache-bust forces a new HTTP connection — no stale img cache.
+    if (this.imgEl) {
+      this.imgEl.src = `/api/camera/stream?t=${Date.now()}`;
+    }
+
+    return res.blob();
   }
 
   async dispose(): Promise<void> {
     if (this.imgEl) {
-      this.imgEl.src = '';
+      this.imgEl.removeAttribute('src');
       this.imgEl.onerror = null;
       this.imgEl = null;
     }
