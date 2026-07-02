@@ -1,18 +1,27 @@
 import type { CameraAdapter } from './CameraAdapter.ts';
 
-/**
- * TetheredAdapter — Phase 2 placeholder.
- *
- * Implements the CameraAdapter interface so TypeScript can verify the contract at compile time.
- * Every method throws; Phase 2 replaces this with real gphoto2 backend integration.
- */
 export class TetheredAdapter implements CameraAdapter {
+  private disconnectCallback: (() => void) | null = null;
+  private sessionId: number | null = null;
+  private imgEl: HTMLImageElement | null = null;
+
   async init(): Promise<void> {
-    throw new Error('TetheredAdapter is a Phase 2 placeholder');
+    const res = await fetch('/api/camera/info');
+    if (!res.ok) throw new Error('Camera backend unreachable');
+    const info = await res.json();
+    if (info.usbConflict) throw new Error('USB_CONFLICT');
+    if (!info.gphoto2Available) throw new Error('No DSLR detected');
   }
 
-  async attachPreview(_el: HTMLVideoElement | HTMLImageElement): Promise<void> {
-    throw new Error('TetheredAdapter is a Phase 2 placeholder');
+  async attachPreview(el: HTMLVideoElement | HTMLImageElement): Promise<void> {
+    if (!(el instanceof HTMLImageElement)) {
+      throw new Error('TetheredAdapter requires HTMLImageElement');
+    }
+    this.imgEl = el;
+    this.imgEl.src = `/api/camera/stream?t=${Date.now()}`;
+    this.imgEl.onerror = () => {
+      this.disconnectCallback?.();
+    };
   }
 
   async capture(): Promise<Blob> {
@@ -20,10 +29,16 @@ export class TetheredAdapter implements CameraAdapter {
   }
 
   async dispose(): Promise<void> {
-    throw new Error('TetheredAdapter is a Phase 2 placeholder');
+    if (this.imgEl) {
+      this.imgEl.src = '';
+      this.imgEl.onerror = null;
+      this.imgEl = null;
+    }
+    this.sessionId = null;
+    this.disconnectCallback = null;
   }
 
-  onDisconnect(_callback: () => void): void {
-    throw new Error('TetheredAdapter is a Phase 2 placeholder');
+  onDisconnect(callback: () => void): void {
+    this.disconnectCallback = callback;
   }
 }
