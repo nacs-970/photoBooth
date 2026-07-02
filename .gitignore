@@ -4,3 +4,7 @@ dist
 *.log
 # Worktree-only test config (never commit to master)
 web/vitest.worktree.config.ts
+
+# Captures directory
+captures/
+captures/**/*.jpg

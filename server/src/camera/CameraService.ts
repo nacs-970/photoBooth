@@ -11,6 +11,22 @@ export class CameraService {
   private streamProc: ChildProcess | null = null;
   private pollInterval: NodeJS.Timeout | null = null;
 
+  async capture(sessionId: number, shotIndex: number): Promise<Buffer> {
+    return this.queue.add(async () => {
+      await this.stopStream();
+      // The server directory is the cwd; resolve relative to it to land in the repo root captures/
+      const dir = path.resolve('captures', `session-${sessionId}`);
+      await mkdir(dir, { recursive: true });
+      const filePath = path.join(dir, `${shotIndex}.jpg`);
+      await execFileAsync('gphoto2', [
+        '--capture-image-and-download',
+        '--filename', filePath,
+        '--force-overwrite',
+      ], { timeout: 10_000 });
+      return readFile(filePath);
+    }) as Promise<Buffer>;
+  }
+
   get isCapturing(): boolean {
     return this.queue.size > 0 || this.queue.pending > 0;
   }
@@ -37,8 +53,7 @@ export class CameraService {
       try {
         const { stdout } = await execFileAsync('gphoto2', [
           '--capture-preview',
-          '--filename', '-',
-          '--force-overwrite'
+          '--stdout'
         ], {
           timeout: 5000,
           encoding: 'buffer'

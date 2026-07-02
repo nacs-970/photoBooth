@@ -14,7 +14,7 @@ export async function cameraRoutes(app: FastifyInstance) {
     }
 
     reply.raw.writeHead(200, {
-      'Content-Type': 'multipart/x-mixed-replace; boundary=--frame',
+      'Content-Type': 'multipart/x-mixed-replace; boundary=frame',
       'Cache-Control': 'no-store, no-cache, must-revalidate',
       'Connection': 'close'
     });
@@ -30,5 +30,23 @@ export async function cameraRoutes(app: FastifyInstance) {
     request.raw.on('close', () => {
       cameraService.stopStream();
     });
+  });
+
+  app.post('/api/camera/capture', async (request, reply) => {
+    const { shotIndex, sessionId } = request.body as { shotIndex: unknown; sessionId: unknown };
+    
+    const idx = Number(shotIndex);
+    if (!Number.isInteger(idx) || idx < 0) {
+      return reply.code(400).send('Invalid shotIndex');
+    }
+
+    const sid = Number(sessionId);
+    if (!Number.isInteger(sid) || sid < 1_000_000_000_000 || sid > Date.now() + 60_000) {
+      return reply.code(400).send('Invalid sessionId');
+    }
+
+    const buffer = await cameraService.capture(sid, idx);
+    reply.header('Content-Type', 'image/jpeg');
+    return reply.send(buffer);
   });
 }
