@@ -38,6 +38,15 @@ describe('DisconnectModal', () => {
     expect(getByText('Retry')).toBeTruthy();
   });
 
+  it('renders custom message when message prop is provided', () => {
+    const { getByText, queryByText } = render(DisconnectModal, {
+      props: { visible: true, onRetry: vi.fn(), message: 'Custom test message' },
+    });
+    expect(getByText('Camera disconnected')).toBeTruthy();
+    expect(getByText('Custom test message')).toBeTruthy();
+    expect(queryByText('Check the cable and try again.')).toBeNull();
+  });
+
   it('modal is positioned as a fixed overlay (position: fixed; inset: 0)', () => {
     // Verify via component source — happy-dom cannot resolve all computed styles
     expect(componentSource).toContain('position: fixed');

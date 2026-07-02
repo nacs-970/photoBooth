@@ -12,7 +12,16 @@
   import PhotoGridScreen from './screens/PhotoGridScreen.svelte';
   import DisconnectModal from './components/DisconnectModal.svelte';
 
+  let disconnectMessage: string | undefined = $state(undefined);
+
   onMount(async () => {
+    window.addEventListener('camera-init-error', (e: Event) => {
+      const ce = e as CustomEvent<{ message: string }>;
+      if (ce.detail?.message === 'USB_CONFLICT') {
+        disconnectMessage = 'Camera in use by another app — quit Image Capture, Shotwell, or gvfs, then tap Retry.';
+      }
+    });
+
     try {
       const res = await fetch('/api/camera/info');
       if (res.ok) {
@@ -31,6 +40,7 @@
    * T-04-DoS mitigation: dispose() always called before init() to prevent stream leak.
    */
   async function handleRetry(): Promise<void> {
+    disconnectMessage = undefined;
     try {
       await cameraAdapter.dispose();
       await cameraAdapter.init();
@@ -38,7 +48,14 @@
       // Signal LivePreview (and any other consumers) to re-attach the new stream
       window.dispatchEvent(new CustomEvent('camera-reattach'));
       hideDisconnect();
+      disconnectMessage = undefined;
     } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg === 'USB_CONFLICT') {
+        disconnectMessage = 'Camera in use by another app — quit Image Capture, Shotwell, or gvfs, then tap Retry.';
+      } else {
+        disconnectMessage = undefined;
+      }
       console.error('[App] Retry camera init failed — modal stays visible:', err);
       // Do NOT call hideDisconnect — keep modal visible so user can tap Retry again
     }
@@ -63,7 +80,7 @@
 
 <!-- DisconnectModal is mounted OUTSIDE the {#key} block so it is not unmounted
      on screen transitions. It renders above all screens via z-index. -->
-<DisconnectModal visible={session.disconnected} onRetry={handleRetry} />
+<DisconnectModal visible={session.disconnected} onRetry={handleRetry} message={disconnectMessage} />
 
 <style>
   .screen-wrapper {

@@ -4,15 +4,16 @@
   interface Props {
     visible: boolean;
     onRetry: () => void;
+    message?: string;
   }
-  let { visible, onRetry }: Props = $props();
+  let { visible, onRetry, message = 'Check the cable and try again.' }: Props = $props();
 </script>
 
 {#if visible}
   <div class="scrim" data-testid="disconnect-modal-scrim">
     <div class="panel">
       <h2 class="heading">Camera disconnected</h2>
-      <p class="body">Check the cable and try again.</p>
+      <p class="body">{message}</p>
       <SecondaryButton onclick={onRetry}>Retry</SecondaryButton>
     </div>
   </div>

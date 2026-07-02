@@ -24,6 +24,7 @@
         // Any other init failure (e.g. hardware error, device busy):
         // surface the disconnect modal so the user sees a bounded error, not a blank screen.
         console.error('[IdleScreen] Camera init failed:', err);
+        window.dispatchEvent(new CustomEvent('camera-init-error', { detail: { message: err instanceof Error ? err.message : String(err) } }));
         showDisconnect();
       }
     }
