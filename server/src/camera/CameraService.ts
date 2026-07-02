@@ -42,12 +42,30 @@ export class CameraService {
       clearTimeout(this.pollTimer);
       this.pollTimer = null;
     }
+    
+    const killAndAwait = async (proc: ChildProcess) => {
+      if (!proc || proc.killed) return;
+      return new Promise<void>((resolve) => {
+        let timeout = setTimeout(() => {
+          proc.kill('SIGKILL');
+          resolve();
+        }, 1500);
+        
+        proc.on('exit', () => {
+          clearTimeout(timeout);
+          resolve();
+        });
+        
+        proc.kill('SIGTERM');
+      });
+    };
+
     if (this.streamProc) {
-      this.streamProc.kill('SIGKILL');
+      await killAndAwait(this.streamProc);
       this.streamProc = null;
     }
     if (this.activePollProc) {
-      this.activePollProc.kill('SIGKILL');
+      await killAndAwait(this.activePollProc);
       this.activePollProc = null;
     }
   }
