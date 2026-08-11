@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rtk git *)",
+      "Bash(rtk ls *)",
+      "Skill(gsd-plan-phase)",
+      "Skill(gsd-ui-phase)",
+      "WebSearch",
+      "Skill(gsd-execute-phase)"
+    ]
+  }
+}
