@@ -19,7 +19,7 @@
   import PrimaryButton from '../components/PrimaryButton.svelte';
   import { cameraAdapter } from '$lib/camera/adapter.ts';
   import { playShutter } from '$lib/audio.ts';
-  import { session, saveShot, goToReview } from '$lib/session.svelte.ts';
+  import { session, saveShot, clearShot, goToReview } from '$lib/session.svelte.ts';
   import { COUNTDOWN_MS, FLASH_DURATION_MS } from '$lib/config.ts';
 
   // Phase: pre (waiting for Start tap) | counting (ring running) | flashing (capture in progress)
@@ -84,6 +84,7 @@
       blob = await cameraAdapter.capture();
     } catch (err) {
       console.error('[CountdownScreen] capture() failed:', err);
+      clearShot(session.currentShotIndex);
       // Even on failure, complete the flash sequence and advance
       flashTimeoutId = setTimeout(() => {
         flashVisible = false;

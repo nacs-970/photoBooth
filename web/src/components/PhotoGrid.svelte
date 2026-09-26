@@ -10,7 +10,9 @@
 <div class="photo-grid">
   {#each shots as shot, i}
     <div class="grid-cell">
-      <img src={shot.objectUrl} alt="" class="grid-thumbnail" />
+      {#if shot}
+        <img src={shot.objectUrl} alt="" class="grid-thumbnail" />
+      {/if}
     </div>
   {/each}
 </div>

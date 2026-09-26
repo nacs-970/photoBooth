@@ -174,6 +174,59 @@ describe('TetheredAdapter (Wave 3/4 contract — todo)', () => {
     expect(imgEl.onerror).toBeNull();
   });
 
+  // --- attachPreview(canvasEl) ---
+  function stubCanvas(): HTMLCanvasElement {
+    const canvas = document.createElement('canvas');
+    vi.spyOn(canvas, 'getContext').mockReturnValue({ drawImage: vi.fn() } as unknown as CanvasRenderingContext2D);
+    return canvas;
+  }
+
+  it('attachPreview(canvasEl) fetches /api/camera/stream', async () => {
+    const fetchMock = vi.fn().mockReturnValue(new Promise(() => {}));
+    vi.stubGlobal('fetch', fetchMock);
+    await adapter.attachPreview(stubCanvas());
+    expect(fetchMock.mock.calls[0][0]).toContain('/api/camera/stream');
+  });
+
+  it('dispose() aborts the canvas stream fetch', async () => {
+    const fetchMock = vi.fn().mockReturnValue(new Promise(() => {}));
+    vi.stubGlobal('fetch', fetchMock);
+    await adapter.attachPreview(stubCanvas());
+    const signal: AbortSignal = fetchMock.mock.calls[0][1].signal;
+    await adapter.dispose();
+    expect(signal.aborted).toBe(true);
+  });
+
   // --- onDisconnect(cb) ---
-  it.todo('onDisconnect(cb) fires when the MJPEG stream errors out');
+  it('onDisconnect(cb) fires when the MJPEG stream errors out', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    const cb = vi.fn();
+    adapter.onDisconnect(cb);
+    await adapter.attachPreview(stubCanvas());
+    await vi.waitFor(() => expect(cb).toHaveBeenCalledTimes(1));
+  });
+
+  it('onDisconnect(cb) does not fire when a re-attach aborts the previous stream', async () => {
+    vi.stubGlobal('fetch', vi.fn((_url: string, init: RequestInit) => new Promise((_, reject) => {
+      init.signal!.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+    })));
+    const cb = vi.fn();
+    adapter.onDisconnect(cb);
+    await adapter.attachPreview(stubCanvas());
+    await adapter.attachPreview(stubCanvas()); // aborts stream #1; callback is still registered
+    await new Promise((r) => setTimeout(r, 0));
+    expect(cb).not.toHaveBeenCalled();
+  });
+
+  it('onDisconnect(cb) does not fire when the stream is aborted by dispose()', async () => {
+    vi.stubGlobal('fetch', vi.fn((_url: string, init: RequestInit) => new Promise((_, reject) => {
+      init.signal!.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+    })));
+    const cb = vi.fn();
+    adapter.onDisconnect(cb);
+    await adapter.attachPreview(stubCanvas());
+    await adapter.dispose();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(cb).not.toHaveBeenCalled();
+  });
 });

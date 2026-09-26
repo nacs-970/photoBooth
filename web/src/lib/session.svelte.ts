@@ -51,6 +51,17 @@ export function saveShot(blob: Blob, index: number): void {
 }
 
 /**
+ * Drop the shot at the given index (capture failed). The review screen then offers a retake
+ * instead of showing a previous photo as if the retake had worked.
+ */
+export function clearShot(index: number): void {
+  const shot = session.shots[index];
+  if (!shot) return;
+  URL.revokeObjectURL(shot.objectUrl);
+  delete session.shots[index];
+}
+
+/**
  * Keep the current shot and advance.
  * If this is the last shot (index === shotCount - 1): transition to photo_grid.
  * Otherwise: increment currentShotIndex and transition to countdown_preview.

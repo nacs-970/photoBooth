@@ -14,6 +14,7 @@
   import { onDestroy } from 'svelte';
   import ReviewPanel from '../components/ReviewPanel.svelte';
   import Toast from '../components/Toast.svelte';
+  import PrimaryButton from '../components/PrimaryButton.svelte';
   import { session, keepShot, retakeShot } from '$lib/session.svelte.ts';
   import { TOAST_DISPLAY_MS } from '$lib/config.ts';
 
@@ -77,6 +78,12 @@
       onKeep={handleKeep}
       onRetake={handleRetake}
     />
+  {:else}
+    <!-- Capture failed: no photo in this slot. Offer a retake instead of a dead end. -->
+    <div class="capture-failed">
+      <p>Capture failed — please try again.</p>
+      <PrimaryButton onclick={handleRetake}>Retake</PrimaryButton>
+    </div>
   {/if}
   <Toast visible={toastVisible} message="Photo saved" />
 </div>
@@ -87,5 +94,16 @@
     height: 100vh;
     position: relative;
     background: var(--color-dominant);
+  }
+
+  .capture-failed {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-lg);
+    height: 100%;
+    color: var(--color-text);
+    font-size: var(--size-label);
   }
 </style>

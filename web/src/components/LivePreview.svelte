@@ -9,11 +9,11 @@
   let { adapter }: Props = $props();
 
   let videoEl: HTMLVideoElement;
-  let imgEl: HTMLImageElement;
+  let canvasEl: HTMLCanvasElement;
 
   function reAttach() {
     if (adapter) {
-      const el = adapter instanceof TetheredAdapter ? imgEl : videoEl;
+      const el = adapter instanceof TetheredAdapter ? canvasEl : videoEl;
       if (el) {
         adapter.attachPreview(el).catch((err) => {
           console.error('[LivePreview] re-attach after retry failed:', err);
@@ -24,7 +24,7 @@
 
   $effect(() => {
     if (adapter) {
-      const el = adapter instanceof TetheredAdapter ? imgEl : videoEl;
+      const el = adapter instanceof TetheredAdapter ? canvasEl : videoEl;
       if (el) {
         adapter.attachPreview(el).catch((err) => {
           console.error('[LivePreview] attachPreview failed:', err);
@@ -44,7 +44,7 @@
 </script>
 
 {#if adapter instanceof TetheredAdapter}
-  <img bind:this={imgEl} class="live-preview" alt="Live DSLR preview" />
+  <canvas bind:this={canvasEl} class="live-preview" aria-label="Live DSLR preview"></canvas>
 {:else}
   <video
     bind:this={videoEl}

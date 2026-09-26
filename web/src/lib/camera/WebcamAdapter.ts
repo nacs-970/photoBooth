@@ -57,7 +57,7 @@ export class WebcamAdapter implements CameraAdapter {
    * Only supports HTMLVideoElement (webcam uses MediaStream, not MJPEG).
    * Stores the video element reference for canvas fallback in capture().
    */
-  async attachPreview(el: HTMLVideoElement | HTMLImageElement): Promise<void> {
+  async attachPreview(el: HTMLVideoElement | HTMLImageElement | HTMLCanvasElement): Promise<void> {
     if (!this.stream) {
       throw new Error('WebcamAdapter not initialized — call init() first');
     }

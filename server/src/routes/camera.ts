@@ -20,16 +20,18 @@ export async function cameraRoutes(app: FastifyInstance) {
     });
 
     const onFrame = (frameBuf: Buffer) => {
+      // Drop frames for a slow client instead of buffering them — buffered frames become lag.
+      if (reply.raw.writableNeedDrain || reply.raw.writableEnded) return;
       reply.raw.write(`--frame\r\nContent-Type: image/jpeg\r\nContent-Length: ${frameBuf.length}\r\n\r\n`);
       reply.raw.write(frameBuf);
       reply.raw.write('\r\n');
     };
 
-    cameraService.startStreamProcess(onFrame);
+    // Each connection only removes its own listener, so an old connection closing
+    // after a reconnect cannot stop the new stream.
+    const unsubscribe = cameraService.subscribe(onFrame, () => reply.raw.end());
 
-    request.raw.on('close', () => {
-      cameraService.stopStream();
-    });
+    request.raw.on('close', unsubscribe);
   });
 
   app.post('/api/camera/capture', async (request, reply) => {

@@ -15,10 +15,11 @@ export interface CameraAdapter {
   /**
    * Attach live preview to a DOM element.
    * Phase 1 (WebcamAdapter): sets el.srcObject = MediaStream (requires HTMLVideoElement).
-   * Phase 2 (TetheredAdapter): sets el.src = MJPEG endpoint URL (works with HTMLImageElement).
+   * Phase 2 (TetheredAdapter): paints the MJPEG stream onto an HTMLCanvasElement
+   * (or sets el.src = MJPEG endpoint URL on an HTMLImageElement).
    * The union type keeps Phase 2 compatible without touching screen code.
    */
-  attachPreview(el: HTMLVideoElement | HTMLImageElement): Promise<void>;
+  attachPreview(el: HTMLVideoElement | HTMLImageElement | HTMLCanvasElement): Promise<void>;
 
   /**
    * Capture one still frame.
