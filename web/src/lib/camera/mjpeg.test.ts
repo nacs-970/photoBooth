@@ -57,6 +57,15 @@ describe('createMjpegParser', () => {
     expect(frames[0]).toEqual(body);
   });
 
+  it('still parses a part whose header is longer than the 1 KB search window', () => {
+    const frames: number[][] = [];
+    const parser = createMjpegParser((f) => frames.push([...f]));
+    const head = enc.encode(`--frame\r\nX-Pad: ${'a'.repeat(2000)}\r\nContent-Length: 3\r\n\r\n`);
+    const stream = concat(head, new Uint8Array([7, 8, 9, 13, 10]), part([4]));
+    for (let i = 0; i < stream.length; i += 512) parser.push(stream.slice(i, i + 512));
+    expect(frames).toEqual([[7, 8, 9], [4]]);
+  });
+
   describe('decoder reuse', () => {
     afterEach(() => { vi.unstubAllGlobals(); });
 

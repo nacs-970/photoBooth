@@ -64,8 +64,14 @@ export function createMjpegParser(onFrame: (jpeg: Uint8Array) => void) {
       pendingBytes += chunk.length;
 
       while (pendingBytes > 0) {
-        const head = peek(Math.min(pendingBytes, HEADER_SEARCH_BYTES));
-        const headerEnd = indexOfSeq(head, HEADER_END, 0);
+        let head = peek(Math.min(pendingBytes, HEADER_SEARCH_BYTES));
+        let headerEnd = indexOfSeq(head, HEADER_END, 0);
+        if (headerEnd === -1 && pendingBytes > HEADER_SEARCH_BYTES) {
+          // Unusually long header (not sent by our server): search all pending bytes,
+          // like the original parser did. Only a malformed stream pays this copy.
+          head = peek(pendingBytes);
+          headerEnd = indexOfSeq(head, HEADER_END, 0);
+        }
         if (headerEnd === -1) break;
 
         const header = decoder.decode(head.subarray(0, headerEnd));
