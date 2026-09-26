@@ -256,7 +256,7 @@ describe('TetheredAdapter (Wave 3/4 contract — todo)', () => {
       const fetchMock = hangingFetch();
       vi.stubGlobal('fetch', fetchMock);
       await adapter.attachPreview(canvas);
-      const signal: AbortSignal = fetchMock.mock.calls[0][1].signal;
+      const signal = fetchMock.mock.calls[0][1].signal!;
 
       vi.advanceTimersByTime(500);
       expect(signal.aborted).toBe(false);

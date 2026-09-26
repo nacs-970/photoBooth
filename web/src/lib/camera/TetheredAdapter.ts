@@ -79,6 +79,18 @@ export class TetheredAdapter implements CameraAdapter {
     const abort = new AbortController();
     this.streamAbort = abort;
 
+    // Screen changed and the canvas left the DOM: close the stream so the server can
+    // stop the camera's live view. Checked on a timer too, because frames may never
+    // arrive (camera busy or gone) and then the per-frame check below never runs.
+    const watchdog = setInterval(() => {
+      if (!canvas.isConnected) {
+        abort.abort();
+        if (this.streamAbort === abort) this.streamAbort = null;
+      }
+    }, 500);
+    // Every abort route (watchdog, re-attach, dispose, frame check) clears the interval.
+    abort.signal.addEventListener('abort', () => clearInterval(watchdog), { once: true });
+
     let pending: Uint8Array | null = null;
     let decoding = false;
 
@@ -128,6 +140,8 @@ export class TetheredAdapter implements CameraAdapter {
       throw new Error('Stream ended');
     })().catch(() => {
       if (abort.signal.aborted) return;
+      // Stream failed on its own: nothing aborts the controller, so stop the watchdog here.
+      clearInterval(watchdog);
       if (this.streamAbort === abort) this.streamAbort = null;
       this.disconnectCallback?.();
     });

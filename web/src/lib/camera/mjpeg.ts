@@ -19,41 +19,85 @@ function indexOfSeq(buf: Uint8Array, seq: number[], from: number): number {
   return -1;
 }
 
+const HEADER_SEARCH_BYTES = 1024; // part headers are < 200 bytes
+
 export function createMjpegParser(onFrame: (jpeg: Uint8Array) => void) {
-  let buf: Uint8Array = new Uint8Array(0);
+  // Pending bytes as a list of chunks: a frame is copied once, when it is complete,
+  // instead of re-copying the whole buffer on every push.
+  let chunks: Uint8Array[] = [];
+  let pendingBytes = 0;
+  const decoder = new TextDecoder();
+
+  /** Copy the first `n` pending bytes into one new array (does not consume them). */
+  function peek(n: number): Uint8Array {
+    if (chunks[0].length >= n) return chunks[0].subarray(0, n);
+    const out = new Uint8Array(n);
+    let off = 0;
+    for (const c of chunks) {
+      if (off >= n) break;
+      const take = Math.min(c.length, n - off);
+      out.set(c.subarray(0, take), off);
+      off += take;
+    }
+    return out;
+  }
+
+  /** Drop the first `n` pending bytes. */
+  function skip(n: number) {
+    pendingBytes -= n;
+    while (n > 0) {
+      const c = chunks[0];
+      if (c.length <= n) {
+        chunks.shift();
+        n -= c.length;
+      } else {
+        chunks[0] = c.subarray(n);
+        n = 0;
+      }
+    }
+  }
 
   return {
     push(chunk: Uint8Array) {
-      if (buf.length === 0) {
-        buf = chunk;
-      } else {
-        const merged = new Uint8Array(buf.length + chunk.length);
-        merged.set(buf);
-        merged.set(chunk, buf.length);
-        buf = merged;
-      }
+      if (chunk.length === 0) return;
+      chunks.push(chunk);
+      pendingBytes += chunk.length;
 
-      for (;;) {
-        const headerEnd = indexOfSeq(buf, HEADER_END, 0);
+      while (pendingBytes > 0) {
+        const head = peek(Math.min(pendingBytes, HEADER_SEARCH_BYTES));
+        const headerEnd = indexOfSeq(head, HEADER_END, 0);
         if (headerEnd === -1) break;
 
-        const header = new TextDecoder().decode(buf.subarray(0, headerEnd));
+        const header = decoder.decode(head.subarray(0, headerEnd));
         const match = /Content-Length:\s*(\d+)/i.exec(header);
         const bodyStart = headerEnd + HEADER_END.length;
         if (!match) {
           // Malformed part — skip past this header and resync on the next one
-          buf = buf.subarray(bodyStart);
+          skip(bodyStart);
           continue;
         }
 
         const length = Number(match[1]);
-        if (buf.length < bodyStart + length) break; // wait for more bytes
+        if (pendingBytes < bodyStart + length) break; // wait for more bytes
 
-        onFrame(buf.slice(bodyStart, bodyStart + length));
-        buf = buf.subarray(bodyStart + length);
+        skip(bodyStart);
+        // The one copy per frame: a fresh array the caller owns.
+        const frame = new Uint8Array(length);
+        let off = 0;
+        while (off < length) {
+          const c = chunks[0];
+          const take = Math.min(c.length, length - off);
+          frame.set(c.subarray(0, take), off);
+          off += take;
+          skip(take);
+        }
+        onFrame(frame);
       }
 
-      if (buf.length > MAX_BUFFER) buf = new Uint8Array(0);
+      if (pendingBytes > MAX_BUFFER) {
+        chunks = [];
+        pendingBytes = 0;
+      }
     },
   };
 }
