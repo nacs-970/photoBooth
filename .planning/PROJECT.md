@@ -59,6 +59,9 @@ Guests walk away with a custom photo strip they can instantly share via QR code,
 | 0x0.st for sharing | Free, no API key, anonymous — perfect for event kiosk | — Pending |
 | Single screen | Simplifies setup — no second display required at events | — Pending |
 | Adaptive camera capture | Windows: live stream frame; Mac/Linux: gphoto2 shutter | — Pending |
+| DSLR: one persistent `gphoto2 --shell` session for preview + capture | Per-process spawns cost ~0.2s/frame (3fps). libgphoto2 also forces a 3s wait from session start before a Sony A7 IV capture (`ptp2/library.c` camera_sony_capture) | ✓ Good — ~25fps preview, shutter ~0.65s after countdown (2026-09-23) |
+| DSLR preview drawn to `<canvas>` via fetch + `createImageBitmap` | `<img>` MJPEG in Firefox held 1.6–1.9 GB of decoded frames | ✓ Good — tab flat at 226–340 MB |
+| Force `capturemode=Single Shot` per session | In PC Remote mode the body dial is ignored; continuous mode fired 3–4 shots per press and broke the next capture | ✓ Good — one file per press |
 
 ## Evolution
 
@@ -78,4 +81,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-19 after initialization*
+*Last updated: 2026-09-23 after Phase 2 camera pipeline rework (02-06)*

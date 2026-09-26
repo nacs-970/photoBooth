@@ -76,7 +76,7 @@ Cross-cutting constraints:
   3. Unplugging the DSLR mid-session surfaces the same "Camera disconnected" recovery UI from Phase 1, and reconnecting + retry resumes without restarting the app
   4. Re-launching the app while a previous gphoto2/PTP claim is held (e.g. gvfs auto-mount) recovers cleanly instead of erroring out permanently
 
-**Plans**: 5 plans
+**Plans**: 7 plans (5 original + 02-06 hotfix + 02-07 gap closure)
 Plans:
 
 **Wave 1**
@@ -85,25 +85,34 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 02-02-PLAN.md — FPS spike + stream strategy decision: measure gphoto2 --capture-movie FPS on actual DSLR, choose movie vs preview-poll
+- [x] 02-02-PLAN.md — FPS spike + stream strategy decision: measure gphoto2 --capture-movie FPS on actual DSLR, choose movie vs preview-poll
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 02-03-PLAN.md — DSLR live preview: CameraService singleton + p-queue, GET /api/camera/stream MJPEG, TetheredAdapter init/attachPreview, LivePreview img/video branch
+- [x] 02-03-PLAN.md — DSLR live preview: CameraService singleton + p-queue, GET /api/camera/stream MJPEG, TetheredAdapter init/attachPreview, LivePreview img/video branch
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 02-04-PLAN.md — DSLR capture: POST /api/camera/capture, CameraService.capture(), TetheredAdapter.capture(), disk persistence, stream reconnect
+- [x] 02-04-PLAN.md — DSLR capture: POST /api/camera/capture, CameraService.capture(), TetheredAdapter.capture(), disk persistence, stream reconnect
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 02-05-PLAN.md — USB conflict + disconnect recovery: DisconnectModal message prop, USB_CONFLICT error variant, mid-session unplug handling
+- [x] 02-05-PLAN.md — USB conflict + disconnect recovery: DisconnectModal message prop, USB_CONFLICT error variant, mid-session unplug handling
+
+**Wave 6** *(hotfix, 2026-09-23 — no pre-written plan)*
+
+- [x] 02-06 — Camera pipeline rework (SUMMARY only): persistent `gphoto2 --shell` session for preview + capture, canvas MJPEG renderer, forced Single Shot, capture-failure Retake UI
+
+**Wave 7** *(gap closure)*
+
+- [ ] 02-07-PLAN.md — Honest probe, idle shell close, capture counter, detached-canvas watchdog, parser copy fix, housekeeping, hardware UAT (SC #1–#4)
 
 Cross-cutting constraints:
 
-- `CameraAdapter` interface is locked — no plan may change init/attachPreview/capture/dispose/onDisconnect signatures
+- `CameraAdapter` interface is locked — no plan may change init/attachPreview/capture/dispose/onDisconnect signatures *(02-06: `attachPreview` union additively widened with `HTMLCanvasElement`)*
 - All gphoto2 ops go through Node backend via CameraService — never spawn gphoto2 in browser code
 - p-queue concurrency 1 is non-negotiable — stream and capture cannot run simultaneously on one USB device
+- One persistent gphoto2 session per server (02-06) — never spawn a second gphoto2 while the shell holds the camera
 - Do NOT break the 42 existing tests from Phase 1
 
 **UI hint**: yes
@@ -165,7 +174,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 (Phase 2 and Phase 3 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Webcam Session Loop | 4/4 | Complete | 2026-05-20 |
-| 2. Tethered DSLR Capture (gphoto2) | 1/5 | In Progress|  |
+| 2. Tethered DSLR Capture (gphoto2) | 6/7 | In Progress (02-07 gap closure + UAT) |  |
 | 3. Template Library & Picker | 0/TBD | Not started | - |
 | 4. Canvas Strip Editor | 0/TBD | Not started | - |
 | 5. GIF, Share & Offline Fallback | 0/TBD | Not started | - |

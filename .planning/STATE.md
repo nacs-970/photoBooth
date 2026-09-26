@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 2 planned — all 5 waves planned
-last_updated: "2026-05-20T08:44:39.433Z"
-last_activity: 2026-05-20 -- Phase 02 execution started
+stopped_at: Phase 2 — 02-06 camera rework done (uncommitted), 02-07 gap-closure planned
+last_updated: "2026-09-23T14:00:00.000Z"
+last_activity: 2026-09-23 -- Phase 02 camera pipeline rework (02-06) + 02-07 planned
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 9
-  completed_plans: 9
-  percent: 100
+  total_plans: 11
+  completed_plans: 10
+  percent: 91
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 
 ## Current Position
 
-Phase: 02 (tethered-dslr-capture-gphoto2) — COMPLETE
-Plan: 5 of 5
-Status: Phase 02 Complete
-Last activity: 2026-07-02 -- Phase 02 Wave 5 execution completed
+Phase: 02 (tethered-dslr-capture-gphoto2) — IN PROGRESS (gap closure)
+Plan: 6 of 7 done — next: 02-07-PLAN.md (gap closure + hardware UAT)
+Status: 02-06 hotfix done and user-confirmed working 2026-09-23 — NOT committed yet
+Last activity: 2026-09-23 -- persistent gphoto2 shell, canvas preview, forced Single Shot, capture-failure UI
 
-Progress: [████████████████████] 100% (Phase 2 complete)
+Progress: [██████████████████░░] 6/7 plans (Phase 2 not verified yet — no 02-VERIFICATION.md / 02-UAT.md)
 
 ## Performance Metrics
 
@@ -66,7 +66,14 @@ Recent decisions affecting current work:
 - Phase 2 D-05: GET /api/camera/stream uses multipart/x-mixed-replace with SOI/EOI byte scanning (not raw pipe)
 - Phase 2: p-queue concurrency 1 in CameraService — stream and capture are mutually exclusive on USB
 - Phase 2 Wave 2: FPS spike required before implementing stream handler — measured FPS determines movie vs preview-poll strategy
-- Phase 2 Wave 2: Decided on option-poll stream strategy for live preview due to lag constraints (2s lag on Sony camera).
+- Phase 2 Wave 2: Decided on option-poll stream strategy for live preview due to lag constraints (2s lag on Sony camera). **SUPERSEDED by 02-06.**
+- Phase 2 02-06 (2026-09-23): the stream strategy is now one persistent `gphoto2 --shell` session for preview and capture (~25fps; shutter ~0.65s after countdown). Reasons:
+  - Spawning a process per frame capped the preview at ~3fps.
+  - libgphoto2 forces a 3s wait from session start before any capture on the ILCE-7M4.
+- Phase 2 02-06: the preview renders to `<canvas>` (fetch + createImageBitmap + close). An `<img>` MJPEG stream used 1.6–1.9 GB in Firefox; the canvas stays at ~300 MB. `attachPreview` accepts `HTMLCanvasElement` (additive widening).
+- Phase 2 02-06: the server forces `capturemode=Single Shot` per session. The body dial is ignored in PC Remote mode.
+- Phase 2 02-06: the shell stays open after the preview stops. 02-07 adds an idle close; this is safe because the countdown keeps the session more than 3s old before the shutter.
+- Phase 2 02-06: `STREAM_MODE=poll` env keeps the legacy per-process path.
 
 ### Pending Todos
 
@@ -75,13 +82,19 @@ Recent decisions affecting current work:
 - ~~After FPS decision: implement DSLR preview (02-03-PLAN.md)~~
 - ~~After preview: implement DSLR capture (02-04-PLAN.md)~~
 - ~~Execute error recovery (02-05-PLAN.md)~~
+- ~~Camera pipeline rework (02-06, hotfix)~~
+- Commit the 02-06 changes. The user asked to hold commits; ask before committing.
+- Execute 02-07-PLAN.md: gap closure plus hardware UAT (unplug, idle, gvfs relaunch)
+- Then `/gsd-verify-work 2` and close Phase 2
 
 ### Blockers/Concerns
 
 Empirical gaps flagged by research to validate during execution:
 
-- gphoto2 MJPEG live-view FPS on the target camera body (Phase 2 Wave 2 spike — REQUIRED before Wave 3)
-- gphoto2 USB device claim conflict (`-53` from gvfs/PTPCamera) at startup (Phase 2 Wave 5)
+- ~~gphoto2 MJPEG live-view FPS on the target camera body~~ — resolved: ~25fps via persistent shell (02-06)
+- gphoto2 USB device claim conflict (`-53` from gvfs/PTPCamera) at startup: code exists, not yet re-verified with the shell design (02-07 UAT)
+- Mid-session unplug and long idle with the persistent shell: not verified on hardware (02-07 UAT)
+- Post-shutter download is ~3s for the 8.5 MB full-size JPEG. A smaller body JPEG size would cut it (deferred; Phase 4 decides the strip resolution)
 - 0x0.st upload field name, CORS behavior, rate-limits (Phase 5 day 1)
 - gifenc quality on real event-photo content (Phase 5)
 
@@ -95,6 +108,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-02
-Stopped at: Session resumed, proceeding to resolve structured handoff blocker
-Resume file: .planning/phases/02-tethered-dslr-capture-gphoto2/02-02-PLAN.md
+Last session: 2026-09-23
+Stopped at: 02-06 camera rework done and user-confirmed; planning updated; changes NOT committed (user request)
+Resume file: .planning/phases/02-tethered-dslr-capture-gphoto2/02-07-PLAN.md
