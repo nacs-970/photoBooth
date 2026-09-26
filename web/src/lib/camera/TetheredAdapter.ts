@@ -1,6 +1,10 @@
 import type { CameraAdapter } from './CameraAdapter.ts';
 import { createMjpegParser } from './mjpeg.ts';
 
+// WR-04: a normal capture takes ~4s (~7s from a cold shell). Past this, give up so the
+// Review "Capture failed" path is reached instead of the countdown screen hanging.
+export const CAPTURE_TIMEOUT_MS = 15_000;
+
 export class TetheredAdapter implements CameraAdapter {
   private disconnectCallback: (() => void) | null = null;
   private sessionId: number | null = null;
@@ -39,28 +43,35 @@ export class TetheredAdapter implements CameraAdapter {
     }
     this.sessionId = session.sessionStartedAt;
 
-    const res = await fetch('/api/camera/capture', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        shotIndex: session.currentShotIndex,
-        sessionId: this.sessionId,
-      }),
-    });
-    if (!res.ok) throw new Error(`Capture failed: ${res.status}`);
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(new Error('Capture timed out')), CAPTURE_TIMEOUT_MS);
+    try {
+      const res = await fetch('/api/camera/capture', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shotIndex: session.currentShotIndex,
+          sessionId: this.sessionId,
+        }),
+        signal: abort.signal,
+      });
+      if (!res.ok) throw new Error(`Capture failed: ${res.status}`);
 
-    // Re-connect preview: stream was killed during capture.
-    // Cache-bust forces a new HTTP connection — no stale img cache.
-    if (this.imgEl) {
-      this.imgEl.src = `/api/camera/stream?t=${Date.now()}`;
-    }
-    // Canvas stream stays connected through a capture (server resumes frames);
-    // only reconnect if it dropped.
-    if (this.canvasEl?.isConnected && !this.streamAbort) {
-      this.startCanvasStream();
-    }
+      // Re-connect preview: stream was killed during capture.
+      // Cache-bust forces a new HTTP connection — no stale img cache.
+      if (this.imgEl) {
+        this.imgEl.src = `/api/camera/stream?t=${Date.now()}`;
+      }
+      // Canvas stream stays connected through a capture (server resumes frames);
+      // only reconnect if it dropped.
+      if (this.canvasEl?.isConnected && !this.streamAbort) {
+        this.startCanvasStream();
+      }
 
-    return res.blob();
+      return await res.blob();
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   /**

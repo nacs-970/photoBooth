@@ -13,7 +13,7 @@
  * will surface them as outstanding work on every CI run.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { TetheredAdapter } from './TetheredAdapter.ts';
+import { TetheredAdapter, CAPTURE_TIMEOUT_MS } from './TetheredAdapter.ts';
 
 vi.mock('$lib/session.svelte.ts', () => ({
   session: {
@@ -97,6 +97,7 @@ describe('TetheredAdapter (Wave 3/4 contract — todo)', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ shotIndex: 2, sessionId: 12345 }),
+      signal: expect.any(AbortSignal),
     });
   });
 
@@ -154,6 +155,20 @@ describe('TetheredAdapter (Wave 3/4 contract — todo)', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     await expect(adapter.capture()).rejects.toThrow('Capture failed: 500');
+  });
+
+  it('capture() aborts and rejects when the server does not answer within CAPTURE_TIMEOUT_MS (WR-04)', async () => {
+    vi.useFakeTimers();
+    try {
+      vi.stubGlobal('fetch', vi.fn((_url: string, init: RequestInit) => new Promise((_, reject) => {
+        init.signal!.addEventListener('abort', () => reject(init.signal!.reason));
+      })));
+      const assertion = expect(adapter.capture()).rejects.toThrow('Capture timed out');
+      await vi.advanceTimersByTimeAsync(CAPTURE_TIMEOUT_MS);
+      await assertion;
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   // --- dispose() ---

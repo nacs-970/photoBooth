@@ -78,6 +78,8 @@
     // Simultaneously: flash + shutter + capture (D-12)
     flashVisible = true;
     playShutter();
+    // WR-04: fade after the normal flash duration, not when capture() settles (~4s on a DSLR).
+    setTimeout(() => (flashVisible = false), FLASH_DURATION_MS);
 
     let blob: Blob;
     try {
