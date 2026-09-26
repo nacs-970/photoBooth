@@ -11,9 +11,9 @@ last_activity_desc: 02-07 complete (hardware UAT user-approved); Phase 2 awaitin
 state_head: 4a4b6e2b9c0a05c498b93c85020bb53bf8ff591e
 progress:
   total_phases: 5
-  completed_phases: 0
-  total_plans: 10
-  completed_plans: 10
+  completed_phases: 1
+  total_plans: 11
+  completed_plans: 11
 milestone_name: milestone
 ---
 
