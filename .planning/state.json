@@ -1,0 +1,38 @@
+{
+  "contract": "1.0.0",
+  "flavor": "core",
+  "milestone": "v1.0",
+  "phases": [
+    {
+      "number": "1",
+      "name": "Foundation & Webcam Session Loop",
+      "status": "complete"
+    },
+    {
+      "number": "2",
+      "name": "Tethered DSLR Capture (gphoto2)",
+      "status": "pending"
+    },
+    {
+      "number": "3",
+      "name": "Template Library & Picker",
+      "status": "pending"
+    },
+    {
+      "number": "4",
+      "name": "Canvas Strip Editor",
+      "status": "pending"
+    },
+    {
+      "number": "5",
+      "name": "GIF, Share & Offline Fallback",
+      "status": "pending"
+    }
+  ],
+  "next": {
+    "command": "/gsd:progress --next",
+    "label": "Advance to the next step",
+    "reason": "Phase 2 of 5 · executing"
+  },
+  "updated_at": "2026-09-26T06:51:22.780Z"
+}

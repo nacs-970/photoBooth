@@ -1,17 +1,20 @@
 ---
-gsd_state_version: 1.0
+gsd_state_version: "1.0"
 milestone: v1.0
-milestone_name: milestone
+current_phase: 2
+current_phase_name: tethered-dslr-capture-gphoto2
 status: executing
-stopped_at: Phase 2 — 02-06 camera rework done (uncommitted), 02-07 gap-closure planned
-last_updated: "2026-09-23T14:00:00.000Z"
-last_activity: 2026-09-23 -- Phase 02 camera pipeline rework (02-06) + 02-07 planned
+stopped_at: "Completed 02-07-PLAN.md (UAT user-approved); next: code review + /gsd-verify-work 2"
+last_updated: "2026-09-26T06:52:14.866Z"
+last_activity: 2026-09-26
+last_activity_desc: 02-07 complete (hardware UAT user-approved); Phase 2 awaiting code review + verification
+state_head: 4a4b6e2b9c0a05c498b93c85020bb53bf8ff591e
 progress:
   total_phases: 5
-  completed_phases: 2
-  total_plans: 11
+  completed_phases: 0
+  total_plans: 10
   completed_plans: 10
-  percent: 91
+milestone_name: milestone
 ---
 
 # Project State
@@ -21,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-19)
 
 **Core value:** Guests walk away with a custom photo strip they can instantly share via QR code, captured with a real camera.
-**Current focus:** Phase 02 — tethered-dslr-capture-gphoto2
+**Current focus:** Phase 2 — tethered-dslr-capture-gphoto2
 
 ## Current Position
 
-Phase: 02 (tethered-dslr-capture-gphoto2) — IN PROGRESS (gap closure)
-Plan: 6 of 7 done — next: 02-07-PLAN.md (gap closure + hardware UAT)
-Status: 02-06 hotfix done and user-confirmed working 2026-09-23 — NOT committed yet
-Last activity: 2026-09-23 -- persistent gphoto2 shell, canvas preview, forced Single Shot, capture-failure UI
+Phase: 2 (tethered-dslr-capture-gphoto2) — ALL PLANS DONE, NOT VERIFIED
+Plan: 7 of 7 done — next: code review, then `/gsd-verify-work 2`
+Status: 02-07 complete; hardware UAT user-approved 2026-09-26 (02-UAT.md)
+Last activity: 2026-09-26 — 02-07 gap closure + hardware UAT (Sony ILCE-7M4, "2-07 approved")
 
-Progress: [██████████████████░░] 6/7 plans (Phase 2 not verified yet — no 02-VERIFICATION.md / 02-UAT.md)
+Progress: [████████████████████] 7/7 plans (Phase 2 not verified yet — 02-UAT.md written, no 02-VERIFICATION.md)
 
 ## Performance Metrics
 
@@ -52,6 +55,11 @@ Progress: [██████████████████░░] 6/7 pla
 - Trend: —
 
 *Updated after each plan completion*
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 02 P07 | 1 session | 4 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -74,6 +82,7 @@ Recent decisions affecting current work:
 - Phase 2 02-06: the server forces `capturemode=Single Shot` per session. The body dial is ignored in PC Remote mode.
 - Phase 2 02-06: the shell stays open after the preview stops. 02-07 adds an idle close; this is safe because the countdown keeps the session more than 3s old before the shutter.
 - Phase 2 02-06: `STREAM_MODE=poll` env keeps the legacy per-process path.
+- Phase 2 02-07: probe() checks a live shell (pending capture / frame <2s / queued get-config capturemode) before trusting it; the shell closes after SHELL_IDLE_MS (default 10 min, not in poll mode)
 
 ### Pending Todos
 
@@ -83,17 +92,17 @@ Recent decisions affecting current work:
 - ~~After preview: implement DSLR capture (02-04-PLAN.md)~~
 - ~~Execute error recovery (02-05-PLAN.md)~~
 - ~~Camera pipeline rework (02-06, hotfix)~~
-- Commit the 02-06 changes. The user asked to hold commits; ask before committing.
-- Execute 02-07-PLAN.md: gap closure plus hardware UAT (unplug, idle, gvfs relaunch)
-- Then `/gsd-verify-work 2` and close Phase 2
+- ~~Commit the 02-06 changes~~ — committed (9894466, fe5f4f2)
+- ~~Execute 02-07-PLAN.md: gap closure plus hardware UAT (unplug, idle, gvfs relaunch)~~ — done 2026-09-26
+- Code review of the 02-07 changes, then `/gsd-verify-work 2` and close Phase 2
 
 ### Blockers/Concerns
 
 Empirical gaps flagged by research to validate during execution:
 
 - ~~gphoto2 MJPEG live-view FPS on the target camera body~~ — resolved: ~25fps via persistent shell (02-06)
-- gphoto2 USB device claim conflict (`-53` from gvfs/PTPCamera) at startup: code exists, not yet re-verified with the shell design (02-07 UAT)
-- Mid-session unplug and long idle with the persistent shell: not verified on hardware (02-07 UAT)
+- ~~gphoto2 USB device claim conflict (`-53` from gvfs/PTPCamera) at startup: not yet re-verified with the shell design~~ — user-approved in 02-UAT.md item 5 (2026-09-26)
+- ~~Mid-session unplug and long idle with the persistent shell: not verified on hardware~~ — user-approved in 02-UAT.md items B1, 3, 4, 6 (2026-09-26)
 - Post-shutter download is ~3s for the 8.5 MB full-size JPEG. A smaller body JPEG size would cut it (deferred; Phase 4 decides the strip resolution)
 - 0x0.st upload field name, CORS behavior, rate-limits (Phase 5 day 1)
 - gifenc quality on real event-photo content (Phase 5)
@@ -108,6 +117,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-23
-Stopped at: 02-06 camera rework done and user-confirmed; planning updated; changes NOT committed (user request)
-Resume file: .planning/phases/02-tethered-dslr-capture-gphoto2/02-07-PLAN.md
+Last session: 2026-09-26T06:51:23.843Z
+Stopped at: Completed 02-07-PLAN.md (UAT user-approved); next: code review + /gsd-verify-work 2
+Resume file: None

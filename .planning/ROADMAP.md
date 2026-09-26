@@ -76,7 +76,7 @@ Cross-cutting constraints:
   3. Unplugging the DSLR mid-session surfaces the same "Camera disconnected" recovery UI from Phase 1, and reconnecting + retry resumes without restarting the app
   4. Re-launching the app while a previous gphoto2/PTP claim is held (e.g. gvfs auto-mount) recovers cleanly instead of erroring out permanently
 
-**Plans**: 7 plans (5 original + 02-06 hotfix + 02-07 gap closure)
+**Plans**: 7/7 plans executed (5 original + 02-06 hotfix + 02-07 gap closure) — awaiting code review + verification
 Plans:
 
 **Wave 1**
@@ -105,7 +105,7 @@ Plans:
 
 **Wave 7** *(gap closure)*
 
-- [ ] 02-07-PLAN.md — Honest probe, idle shell close, capture counter, detached-canvas watchdog, parser copy fix, housekeeping, hardware UAT (SC #1–#4)
+- [x] 02-07-PLAN.md — Honest probe, idle shell close, capture counter, detached-canvas watchdog, parser copy fix, housekeeping, hardware UAT (SC #1–#4)
 
 Cross-cutting constraints:
 
@@ -174,7 +174,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 (Phase 2 and Phase 3 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Webcam Session Loop | 4/4 | Complete | 2026-05-20 |
-| 2. Tethered DSLR Capture (gphoto2) | 6/7 | In Progress (02-07 gap closure + UAT) |  |
+| 2. Tethered DSLR Capture (gphoto2) | 7/7 | In Progress (awaiting verification) |  |
 | 3. Template Library & Picker | 0/TBD | Not started | - |
 | 4. Canvas Strip Editor | 0/TBD | Not started | - |
 | 5. GIF, Share & Offline Fallback | 0/TBD | Not started | - |
