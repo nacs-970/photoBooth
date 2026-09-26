@@ -1,7 +1,7 @@
 import PQueue from 'p-queue';
 import { execFile, spawn, ChildProcess } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdir, readFile, copyFile, unlink } from 'node:fs/promises';
+import { mkdir, readFile, copyFile, unlink, readdir } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -18,6 +18,12 @@ const STREAM_MODE: 'shell' | 'poll' = process.env.STREAM_MODE === 'poll' ? 'poll
 const SHELL_DIR = path.join(os.tmpdir(), 'photobooth-gphoto2');
 const SHELL_PROMPT = '/> ';
 const PREVIEW_FAILURES_BEFORE_DISCONNECT = 5;
+// Close the shell (and release the camera's USB claim) after this long with no stream
+// and no capture. The next stream reopens it; the countdown preview keeps the session
+// > 3s old, so the first capture still skips the Sony startup wait.
+const SHELL_IDLE_MS = Number(process.env.SHELL_IDLE_MS) > 0 ? Number(process.env.SHELL_IDLE_MS) : 600_000;
+// A frame broadcast this recently proves the camera is alive without sending a command.
+const PROBE_FRAME_MAX_AGE_MS = 2000;
 
 type FrameListener = (frame: Buffer) => void;
 type Subscriber = { onFrame: FrameListener; onEnd: () => void };
@@ -28,8 +34,10 @@ export class CameraService {
   private queue = new PQueue({ concurrency: 1 });
   private isPolling = false;
   private pollTimer: NodeJS.Timeout | null = null;
-  private capturing = false;
+  private pendingCaptures = 0;
   private previewing = false;
+  private lastFrameAt = 0;
+  private idleTimer: NodeJS.Timeout | null = null;
   private previewGen = 0;
   private subscribers = new Set<Subscriber>();
 
@@ -40,7 +48,10 @@ export class CameraService {
   private shellWaiter: { resolve: (out: string) => void; reject: (err: Error) => void } | null = null;
 
   async capture(sessionId: number, shotIndex: number): Promise<Buffer> {
-    this.capturing = true;
+    // A counter, not a flag: with two overlapping captures the first one to finish
+    // must not restart the preview between them.
+    this.pendingCaptures++;
+    this.cancelIdleClose();
     // 1. Stop the preview. Subscribers stay registered and get frames again afterwards.
     this.stopStream();
 
@@ -76,14 +87,17 @@ export class CameraService {
         return readFile(filePath);
       }) as Promise<Buffer>);
     } finally {
-      this.capturing = false;
-      // Resume preview for anyone still watching
-      if (this.subscribers.size > 0) this.startProducer();
+      this.pendingCaptures--;
+      if (this.pendingCaptures === 0) {
+        // Resume preview for anyone still watching
+        if (this.subscribers.size > 0) this.startProducer();
+        else this.armIdleClose();
+      }
     }
   }
 
   get isCapturing(): boolean {
-    return this.capturing;
+    return this.pendingCaptures > 0;
   }
 
   /**
@@ -95,15 +109,48 @@ export class CameraService {
   subscribe(onFrame: FrameListener, onEnd: () => void): () => void {
     const sub = { onFrame, onEnd };
     this.subscribers.add(sub);
-    if (!this.capturing) this.startProducer();
+    this.cancelIdleClose();
+    if (this.pendingCaptures === 0) this.startProducer();
     return () => {
       this.subscribers.delete(sub);
-      if (this.subscribers.size === 0) this.stopStream();
+      if (this.subscribers.size === 0) {
+        this.stopStream();
+        if (this.pendingCaptures === 0) this.armIdleClose();
+      }
     };
   }
 
   private broadcast(frame: Buffer) {
+    this.lastFrameAt = Date.now();
     for (const sub of this.subscribers) sub.onFrame(frame);
+  }
+
+  /** Start (or restart) the idle timer that closes an unused shell session. */
+  private armIdleClose() {
+    if (STREAM_MODE !== 'shell') return;
+    this.cancelIdleClose();
+    const timer = setTimeout(() => {
+      if (this.idleTimer !== timer) return;
+      this.idleTimer = null;
+      // Through the queue, so a running command is never cut off. Re-check inside:
+      // cancelIdleClose() cannot remove a stop task that is already queued.
+      void this.queue.add(async () => {
+        if (this.subscribers.size === 0 && this.pendingCaptures === 0 && this.shell) {
+          console.log('[CameraService] closing idle gphoto2 shell');
+          this.stopShell();
+        }
+      });
+    }, SHELL_IDLE_MS);
+    // The timer alone must not keep the Node process alive.
+    timer.unref();
+    this.idleTimer = timer;
+  }
+
+  private cancelIdleClose() {
+    if (this.idleTimer) {
+      clearTimeout(this.idleTimer);
+      this.idleTimer = null;
+    }
   }
 
   stopStream() {
@@ -132,10 +179,10 @@ export class CameraService {
     const live = () => this.previewing && gen === this.previewGen;
     let failures = 0;
 
-    while (live() && this.subscribers.size > 0 && !this.capturing) {
+    while (live() && this.subscribers.size > 0 && this.pendingCaptures === 0) {
       try {
         await this.queue.add(async () => {
-          if (!live() || this.capturing) return;
+          if (!live() || this.pendingCaptures > 0) return;
           const out = await this.shellRun('capture-preview', 5000);
           if (!out.includes('Saving file as')) throw new Error(out.trim().slice(-200));
           const frame = await readFile(path.join(SHELL_DIR, 'capture_preview.jpg'));
@@ -162,6 +209,14 @@ export class CameraService {
     await Promise.race([this.shellExited, sleep(5000)]);
     if (this.shell) return;
     await mkdir(SHELL_DIR, { recursive: true });
+    // Drop files a crashed or killed session left behind (partial downloads, burst images).
+    try {
+      const leftovers = (await readdir(SHELL_DIR)).filter(f => /^(tmpfile|capt_)/.test(f));
+      await Promise.all(leftovers.map(f => unlink(path.join(SHELL_DIR, f)).catch(() => {})));
+    } catch {
+      // Cleanup is best effort
+    }
+    if (this.shell) return;
 
     const proc = spawn('gphoto2', ['--force-overwrite', '--shell'], {
       cwd: SHELL_DIR,
@@ -288,8 +343,32 @@ export class CameraService {
   }
 
   async probe(): Promise<{ available: boolean; conflictError?: string }> {
-    // The shell session holds the camera; a live session already proves it is available.
-    if (this.shell) return { available: true };
+    // A capture holds the camera (and pauses the preview, so lastFrameAt goes stale).
+    // Checked before `this.shell`: the capture may be inside ensureShell() with no shell
+    // yet, and an --auto-detect then would collide with its USB claim.
+    if (this.pendingCaptures > 0) return { available: true };
+    if (this.shell) {
+      // A recent preview frame proves the camera answers, with no extra command.
+      if (Date.now() - this.lastFrameAt < PROBE_FRAME_MAX_AGE_MS) return { available: true };
+      // An open shell alone proves nothing: the camera may have been unplugged while idle.
+      const alive = await this.queue.add(async () => {
+        if (!this.shell) return false;
+        const exited = this.shellExited;
+        try {
+          // The 3s timeout starts here, when the command runs, not when it was queued.
+          const out = await this.shellExec('get-config capturemode', 3000);
+          if (!/\*\*\* Error/.test(out) && /Current:/.test(out)) return true;
+        } catch {
+          // Timed out or the shell died — handled below
+        }
+        // Close the dead session and wait until it releases USB, still holding the
+        // queue, so the --auto-detect below does not report a false USB_CONFLICT.
+        this.stopShell();
+        await Promise.race([exited, sleep(5000)]);
+        return false;
+      });
+      if (alive) return { available: true };
+    }
     try {
       await this.queue.add(async () => {
         await execFileAsync('gphoto2', ['--auto-detect'], { timeout: 3000 });
