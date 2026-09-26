@@ -6,9 +6,5 @@
   },
   "devDependencies": {
     "concurrently": "9.2.1"
-  },
-  "dependencies": {
-    "@fastify/multipart": "^10.0.0",
-    "p-queue": "^9.3.0"
   }
 }
