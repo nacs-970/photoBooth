@@ -30,6 +30,18 @@ type Subscriber = { onFrame: FrameListener; onEnd: () => void };
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
+/**
+ * True when `gphoto2 --auto-detect` stdout lists at least one camera.
+ * It exits 0 with only the "Model  Port" header and a dashed line when nothing is attached,
+ * so the exit code alone proves nothing. Any non-blank row after the dashed line is a camera.
+ */
+export function autoDetectFoundCamera(stdout: string): boolean {
+  const lines = stdout.split('\n');
+  const sep = lines.findIndex(l => /^-{3,}\s*$/.test(l.trim()));
+  if (sep === -1) return false;
+  return lines.slice(sep + 1).some(l => l.trim() !== '');
+}
+
 export class CameraService {
   private queue = new PQueue({ concurrency: 1 });
   private isPolling = false;
@@ -370,10 +382,11 @@ export class CameraService {
       if (alive) return { available: true };
     }
     try {
-      await this.queue.add(async () => {
-        await execFileAsync('gphoto2', ['--auto-detect'], { timeout: 3000 });
+      const stdout = await this.queue.add(async () => {
+        const res = await execFileAsync('gphoto2', ['--auto-detect'], { timeout: 3000 });
+        return res.stdout.toString();
       });
-      return { available: true };
+      return { available: autoDetectFoundCamera(stdout) };
     } catch (err: any) {
       const stderr = err.stderr ? err.stderr.toString() : '';
       if (stderr.includes('Could not claim the USB device') || stderr.includes('-53')) {
