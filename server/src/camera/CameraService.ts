@@ -204,8 +204,15 @@ export class CameraService {
       } catch (err) {
         if (++failures >= PREVIEW_FAILURES_BEFORE_DISCONNECT) {
           console.error('[CameraService] camera stopped answering:', (err as Error).message);
-          this.stopShell();
-          for (const sub of this.subscribers) sub.onEnd();
+          // Stop through the queue, so a command that is already running (e.g. a probe's
+          // get-config) is not cut off. Skip it if a capture or a newer loop took over
+          // meanwhile: that loop owns the shell now, and its stream must not be ended.
+          const stopped = await this.queue.add(async () => {
+            if (!live()) return false;
+            this.stopShell();
+            return true;
+          });
+          if (stopped) for (const sub of this.subscribers) sub.onEnd();
           break;
         }
         await sleep(200);
@@ -314,6 +321,11 @@ export class CameraService {
     const proc = this.shell;
     if (!proc) return;
     this.shell = null;
+    // onData/onGone ignore a proc that is no longer this.shell, so settle a pending
+    // command here instead of leaving it to hang until its timeout.
+    const waiter = this.shellWaiter;
+    this.shellWaiter = null;
+    waiter?.reject(new Error('gphoto2 shell stopped'));
     proc.stdin?.end('exit\n');
     setTimeout(() => { if (proc.exitCode === null) proc.kill('SIGINT'); }, 2000);
   }
