@@ -1,10 +1,28 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import LivePreview from '../components/LivePreview.svelte';
   import PrimaryButton from '../components/PrimaryButton.svelte';
   import { startSession, showDisconnect } from '$lib/session.svelte.ts';
   import { cameraAdapter } from '$lib/camera/adapter.ts';
   import { unlockAudio } from '$lib/audio.ts';
+  import { IDLE_PREVIEW_MS } from '$lib/config.ts';
+
+  // WR-03: the idle screen would otherwise hold the preview stream (and the camera's
+  // live view + USB claim) forever. Detach it after IDLE_PREVIEW_MS with no interaction;
+  // the next tap re-attaches it.
+  let previewActive = $state(true);
+  let idlePreviewTimer: ReturnType<typeof setTimeout> | undefined;
+
+  function wakePreview(): void {
+    clearTimeout(idlePreviewTimer);
+    previewActive = true;
+    idlePreviewTimer = setTimeout(() => {
+      previewActive = false;
+    }, IDLE_PREVIEW_MS);
+  }
+
+  wakePreview();
+  onDestroy(() => clearTimeout(idlePreviewTimer));
 
   onMount(async () => {
     try {
@@ -39,9 +57,13 @@
   }
 </script>
 
+<svelte:window onpointerdown={wakePreview} />
+
 <div class="idle-screen">
   <div class="preview-bg">
-    <LivePreview adapter={cameraAdapter} />
+    {#if previewActive}
+      <LivePreview adapter={cameraAdapter} />
+    {/if}
   </div>
   <div class="overlay">
     <PrimaryButton onclick={handleStart}>Tap to Start</PrimaryButton>
