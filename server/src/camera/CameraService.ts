@@ -355,21 +355,26 @@ export class CameraService {
   }
 
   async probe(): Promise<{ available: boolean; conflictError?: string }> {
+    // Fast paths with no queue wait; both are checked again inside the task below.
     // A capture holds the camera (and pauses the preview, so lastFrameAt goes stale).
-    // Checked before `this.shell`: the capture may be inside ensureShell() with no shell
-    // yet, and an --auto-detect then would collide with its USB claim.
     if (this.pendingCaptures > 0) return { available: true };
-    if (this.shell) {
-      // A recent preview frame proves the camera answers, with no extra command.
-      if (Date.now() - this.lastFrameAt < PROBE_FRAME_MAX_AGE_MS) return { available: true };
-      // An open shell alone proves nothing: the camera may have been unplugged while idle.
-      const alive = await this.queue.add(async () => {
-        if (!this.shell) return false;
+    // A recent preview frame proves the camera answers, with no extra command.
+    if (this.shell && Date.now() - this.lastFrameAt < PROBE_FRAME_MAX_AGE_MS) return { available: true };
+
+    // Shell or no shell is decided inside ONE queued task. ensureShell() sets this.shell
+    // only after several awaits, so a check made when probe() is called can be stale by
+    // the time the command runs, and an --auto-detect next to a live shell would report
+    // a false USB_CONFLICT.
+    return this.queue.add(async (): Promise<{ available: boolean; conflictError?: string }> => {
+      if (this.pendingCaptures > 0) return { available: true };
+      if (this.shell) {
+        if (Date.now() - this.lastFrameAt < PROBE_FRAME_MAX_AGE_MS) return { available: true };
+        // An open shell alone proves nothing: the camera may have been unplugged while idle.
         const exited = this.shellExited;
         try {
           // The 3s timeout starts here, when the command runs, not when it was queued.
           const out = await this.shellExec('get-config capturemode', 3000);
-          if (!/\*\*\* Error/.test(out) && /Current:/.test(out)) return true;
+          if (!/\*\*\* Error/.test(out) && /Current:/.test(out)) return { available: true };
         } catch {
           // Timed out or the shell died — handled below
         }
@@ -377,23 +382,18 @@ export class CameraService {
         // queue, so the --auto-detect below does not report a false USB_CONFLICT.
         this.stopShell();
         await Promise.race([exited, sleep(5000)]);
-        return false;
-      });
-      if (alive) return { available: true };
-    }
-    try {
-      const stdout = await this.queue.add(async () => {
-        const res = await execFileAsync('gphoto2', ['--auto-detect'], { timeout: 3000 });
-        return res.stdout.toString();
-      });
-      return { available: autoDetectFoundCamera(stdout) };
-    } catch (err: any) {
-      const stderr = err.stderr ? err.stderr.toString() : '';
-      if (stderr.includes('Could not claim the USB device') || stderr.includes('-53')) {
-        return { available: false, conflictError: 'USB_CONFLICT' };
       }
-      return { available: false };
-    }
+      try {
+        const { stdout } = await execFileAsync('gphoto2', ['--auto-detect'], { timeout: 3000 });
+        return { available: autoDetectFoundCamera(stdout.toString()) };
+      } catch (err: any) {
+        const stderr = err.stderr ? err.stderr.toString() : '';
+        if (stderr.includes('Could not claim the USB device') || stderr.includes('-53')) {
+          return { available: false, conflictError: 'USB_CONFLICT' };
+        }
+        return { available: false };
+      }
+    });
   }
 }
 
