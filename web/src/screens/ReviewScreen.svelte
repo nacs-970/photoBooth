@@ -23,6 +23,8 @@
   // Timer handles for cleanup (T-03-DoS)
   let toastHideTimer: ReturnType<typeof setTimeout> | undefined;
   let keepShotTimer: ReturnType<typeof setTimeout> | undefined;
+  // CR-03: set once a screen change is requested; later taps are ignored until unmount.
+  let leaving = false;
 
   function clearTimers(): void {
     if (toastHideTimer !== undefined) {
@@ -41,9 +43,12 @@
   });
 
   function handleKeep(): void {
+    // Ignore a second Keep while the toast runs or after the screen change started.
+    if (leaving || keepShotTimer !== undefined) return;
     const isLastShot = session.currentShotIndex >= session.config.shotCount - 1;
     if (isLastShot) {
       // Last shot: go directly to photo_grid, no toast
+      leaving = true;
       keepShot();
     } else {
       // Between shots: show toast, then advance
@@ -56,12 +61,15 @@
       // Advance to next shot after full toast duration (1200ms total)
       keepShotTimer = setTimeout(() => {
         keepShotTimer = undefined;
+        leaving = true;
         keepShot();
       }, TOAST_DISPLAY_MS);
     }
   }
 
   function handleRetake(): void {
+    if (leaving) return;
+    leaving = true;
     // Cancel any in-flight toast timers (T-03-DoS)
     clearTimers();
     toastVisible = false;
