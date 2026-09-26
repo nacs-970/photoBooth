@@ -229,4 +229,69 @@ describe('TetheredAdapter (Wave 3/4 contract — todo)', () => {
     await new Promise((r) => setTimeout(r, 0));
     expect(cb).not.toHaveBeenCalled();
   });
+
+  // --- detached-canvas watchdog ---
+  describe('canvas watchdog', () => {
+    let canvas: HTMLCanvasElement;
+
+    /** fetch that never delivers a frame and rejects only when aborted. */
+    function hangingFetch() {
+      return vi.fn((_url: string, init: RequestInit) => new Promise((_, reject) => {
+        init.signal!.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+      }));
+    }
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      canvas = stubCanvas();
+      document.body.appendChild(canvas);
+    });
+
+    afterEach(() => {
+      canvas.remove();
+      vi.useRealTimers();
+    });
+
+    it('aborts the stream when the canvas leaves the DOM, even with no frame', async () => {
+      const fetchMock = hangingFetch();
+      vi.stubGlobal('fetch', fetchMock);
+      await adapter.attachPreview(canvas);
+      const signal: AbortSignal = fetchMock.mock.calls[0][1].signal;
+
+      vi.advanceTimersByTime(500);
+      expect(signal.aborted).toBe(false);
+
+      canvas.remove();
+      vi.advanceTimersByTime(500);
+      expect(signal.aborted).toBe(true);
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('runs one watchdog interval while streaming and none after dispose', async () => {
+      vi.stubGlobal('fetch', hangingFetch());
+      await adapter.attachPreview(canvas);
+      expect(vi.getTimerCount()).toBe(1);
+      await adapter.dispose();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('re-attach replaces the watchdog instead of adding a second one', async () => {
+      vi.stubGlobal('fetch', hangingFetch());
+      await adapter.attachPreview(canvas);
+      await adapter.attachPreview(canvas);
+      expect(vi.getTimerCount()).toBe(1);
+      await adapter.dispose();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('clears the watchdog when the stream fails (disconnect path)', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+      const cb = vi.fn();
+      adapter.onDisconnect(cb);
+      await adapter.attachPreview(canvas);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(cb).toHaveBeenCalledTimes(1);
+      expect(vi.getTimerCount()).toBe(0);
+    });
+  });
 });

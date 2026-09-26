@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createMjpegParser } from './mjpeg.ts';
 
 const enc = new TextEncoder();
@@ -43,5 +43,34 @@ describe('createMjpegParser', () => {
     expect(frames).toHaveLength(0);
     parser.push(p.slice(p.length - 4));
     expect(frames).toHaveLength(1);
+  });
+
+  it('reassembles a 200 KB body delivered in 16 KB chunks into one identical frame', () => {
+    const body = new Uint8Array(200 * 1024);
+    for (let i = 0; i < body.length; i++) body[i] = (i * 31 + 7) & 0xff;
+    const frames: Uint8Array[] = [];
+    const parser = createMjpegParser((f) => frames.push(f));
+    const stream = part([...body]);
+    for (let i = 0; i < stream.length; i += 16 * 1024) parser.push(stream.slice(i, i + 16 * 1024));
+    expect(frames).toHaveLength(1);
+    expect(frames[0].length).toBe(body.length);
+    expect(frames[0]).toEqual(body);
+  });
+
+  describe('decoder reuse', () => {
+    afterEach(() => { vi.unstubAllGlobals(); });
+
+    it('creates one TextDecoder per parser, not one per part', () => {
+      // Counting subclass: keeps the real decode() so the parser still works.
+      let created = 0;
+      vi.stubGlobal('TextDecoder', class extends TextDecoder {
+        constructor(...args: ConstructorParameters<typeof TextDecoder>) { super(...args); created++; }
+      });
+      const frames: number[][] = [];
+      const parser = createMjpegParser((f) => frames.push([...f]));
+      parser.push(concat(part([1]), part([2]), part([3])));
+      expect(frames).toEqual([[1], [2], [3]]);
+      expect(created).toBe(1);
+    });
   });
 });
